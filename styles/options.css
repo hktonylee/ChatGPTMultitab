@@ -1,0 +1,140 @@
+:root {
+  color: #171717;
+  background: #f8f8f8;
+  font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  box-sizing: border-box;
+  max-width: 720px;
+  min-height: 100vh;
+  padding: 32px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+h2 {
+  margin-top: 32px;
+  font-size: 17px;
+}
+
+.intro {
+  margin-top: 8px;
+  color: #555;
+}
+
+form {
+  margin-top: 28px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.entry-row {
+  display: flex;
+  gap: 8px;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 6px;
+  background: #166534;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 10px 14px;
+}
+
+button:hover {
+  background: #14532d;
+}
+
+ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+li {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+li code,
+.examples code {
+  overflow-wrap: anywhere;
+}
+
+li button {
+  background: #9f1239;
+  flex: 0 0 auto;
+}
+
+li button:hover {
+  background: #881337;
+}
+
+#empty-state {
+  margin-top: 12px;
+  color: #666;
+}
+
+#status {
+  min-height: 24px;
+  margin-top: 16px;
+  color: #166534;
+}
+
+#status.error {
+  color: #9f1239;
+}
+
+.examples {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+@media (max-width: 560px) {
+  main {
+    padding: 20px;
+  }
+
+  .entry-row {
+    display: grid;
+  }
+}

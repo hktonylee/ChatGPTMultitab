@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Configurable X-Frame-Options Remover",
+  "description": "Removes X-Frame-Options response headers for user-configured URL patterns.",
+  "version": "0.1.0",
+  "permissions": [
+    "declarativeNetRequestWithHostAccess",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_popup": "options.html",
+    "default_title": "X-Frame-Options Remover"
+  }
+}

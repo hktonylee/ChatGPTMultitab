@@ -1,0 +1,9 @@
+{
+  "name": "configurable-x-frame-options-remover",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node --check src/rules.js && node --check src/background.js && node --check src/options.js"
+  }
+}

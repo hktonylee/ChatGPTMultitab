@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>X-Frame-Options Remover</title>
+    <link rel="stylesheet" href="styles/options.css">
+  </head>
+  <body>
+    <main>
+      <h1>X-Frame-Options Remover</h1>
+      <p class="intro">Remove frame-blocking headers only for the URL patterns you trust.</p>
+
+      <form id="pattern-form">
+        <label for="pattern-input">URL pattern</label>
+        <div class="entry-row">
+          <input
+            id="pattern-input"
+            name="pattern"
+            type="text"
+            autocomplete="off"
+            placeholder="http://localhost:8080/*"
+          >
+          <button type="submit">Add</button>
+        </div>
+      </form>
+
+      <section aria-labelledby="patterns-heading">
+        <h2 id="patterns-heading">Active patterns</h2>
+        <ul id="pattern-list"></ul>
+        <p id="empty-state">No patterns configured.</p>
+      </section>
+
+      <p id="status" role="status" aria-live="polite"></p>
+
+      <section class="examples" aria-labelledby="examples-heading">
+        <h2 id="examples-heading">Examples</h2>
+        <code>http://localhost:8080/*</code>
+        <code>http://127.0.0.1:*/some/path/*</code>
+        <code>file:///home/tonylee/example.html</code>
+      </section>
+    </main>
+
+    <script src="src/rules.js"></script>
+    <script src="src/options.js"></script>
+  </body>
+</html>
