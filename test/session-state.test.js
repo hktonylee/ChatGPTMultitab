@@ -49,6 +49,29 @@ test("sanitizes stored tab session state", () => {
   );
 });
 
+test("normalizes relative or non-chatgpt urls back to the default chat url", () => {
+  assert.equal(
+    sanitizeStoredTabState({
+      activeTabId: 6,
+      tabs: [
+        { id: 6, title: "Broken", url: "src/session-state.js" },
+        { id: 7, title: "Other", url: "https://example.com/" },
+      ],
+    }).tabs[0].url,
+    DEFAULT_CHAT_URL,
+  );
+
+  assert.equal(
+    sanitizeStoredTabState({
+      activeTabId: 7,
+      tabs: [
+        { id: 7, title: "Other", url: "https://example.com/" },
+      ],
+    }).tabs[0].url,
+    DEFAULT_CHAT_URL,
+  );
+});
+
 test("falls back to a default session when stored state is unusable", () => {
   assert.deepEqual(
     sanitizeStoredTabState({
