@@ -102,10 +102,27 @@ li {
   min-width: 0;
 }
 
+.pattern-summary {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .pattern-actions {
   display: flex;
   flex: 0 0 auto;
   gap: 8px;
+}
+
+.primary-badge {
+  border: 1px solid #14532d;
+  border-radius: 999px;
+  color: #14532d;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 8px;
 }
 
 li code,

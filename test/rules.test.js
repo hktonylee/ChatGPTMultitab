@@ -7,7 +7,10 @@ const {
   buildDynamicRules,
   buildHeaderRemovalRules,
   doesUrlMatchPattern,
+  normalizePatternState,
   normalizePatterns,
+  removePatternFromState,
+  setPrimaryPattern,
 } = require("../src/rules");
 
 test("normalizes patterns by trimming blanks and removing duplicates", () => {
@@ -131,4 +134,62 @@ test("matches urls against stored patterns exactly", () => {
     false,
   );
   assert.equal(doesUrlMatchPattern("https://example.com/", "https://chatgpt.com/*"), false);
+});
+
+test("normalizes state by moving the primary url to the front", () => {
+  assert.deepEqual(
+    normalizePatternState(
+      ["https://two.example/", "https://one.example/", "https://three.example/"],
+      "https://one.example/",
+    ),
+    {
+      patterns: [
+        "https://one.example/",
+        "https://two.example/",
+        "https://three.example/",
+      ],
+      primaryPattern: "https://one.example/",
+    },
+  );
+});
+
+test("normalizes state by clearing an invalid primary url", () => {
+  assert.deepEqual(
+    normalizePatternState(["https://two.example/", "https://one.example/"], "https://missing.example/"),
+    {
+      patterns: ["https://two.example/", "https://one.example/"],
+      primaryPattern: "",
+    },
+  );
+});
+
+test("sets a primary url by moving it to the front", () => {
+  assert.deepEqual(
+    setPrimaryPattern(
+      ["https://two.example/", "https://one.example/", "https://three.example/"],
+      "https://three.example/",
+    ),
+    {
+      patterns: [
+        "https://three.example/",
+        "https://two.example/",
+        "https://one.example/",
+      ],
+      primaryPattern: "https://three.example/",
+    },
+  );
+});
+
+test("removing the primary url clears primary state", () => {
+  assert.deepEqual(
+    removePatternFromState(
+      ["https://one.example/", "https://two.example/", "https://three.example/"],
+      "https://one.example/",
+      "https://one.example/",
+    ),
+    {
+      patterns: ["https://two.example/", "https://three.example/"],
+      primaryPattern: "",
+    },
+  );
 });

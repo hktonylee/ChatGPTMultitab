@@ -45,6 +45,46 @@
     return normalized;
   }
 
+  function normalizePatternState(patterns, primaryPattern = "") {
+    const normalizedPatterns = normalizePatterns(patterns);
+    const normalizedPrimaryPattern = String(primaryPattern || "").trim();
+
+    if (!normalizedPrimaryPattern) {
+      return {
+        patterns: normalizedPatterns,
+        primaryPattern: "",
+      };
+    }
+
+    if (!normalizedPatterns.includes(normalizedPrimaryPattern)) {
+      return {
+        patterns: normalizedPatterns,
+        primaryPattern: "",
+      };
+    }
+
+    return {
+      patterns: [
+        normalizedPrimaryPattern,
+        ...normalizedPatterns.filter((pattern) => pattern !== normalizedPrimaryPattern),
+      ],
+      primaryPattern: normalizedPrimaryPattern,
+    };
+  }
+
+  function setPrimaryPattern(patterns, primaryPattern) {
+    return normalizePatternState(patterns, primaryPattern);
+  }
+
+  function removePatternFromState(patterns, patternToRemove, primaryPattern = "") {
+    const nextPatterns = normalizePatterns(patterns).filter((pattern) => pattern !== patternToRemove);
+    const nextPrimaryPattern = String(primaryPattern || "").trim() === String(patternToRemove || "").trim()
+      ? ""
+      : primaryPattern;
+
+    return normalizePatternState(nextPatterns, nextPrimaryPattern);
+  }
+
   function escapeRegExp(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
@@ -122,7 +162,10 @@
     buildDynamicRules,
     buildHeaderRemovalRules,
     doesUrlMatchPattern,
+    normalizePatternState,
     normalizePatterns,
+    removePatternFromState,
+    setPrimaryPattern,
   };
 
   if (typeof module !== "undefined" && module.exports) {

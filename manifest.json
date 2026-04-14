@@ -42,7 +42,6 @@
       "48": "extension-icon.png",
       "128": "extension-icon.png"
     },
-    "default_popup": "options.html",
     "default_title": "ChatGPT Multitab System"
   }
 }

@@ -58,6 +58,12 @@ chrome.runtime.onStartup.addListener(() => {
   });
 });
 
+chrome.action.onClicked.addListener(() => {
+  chrome.runtime.openOptionsPage().catch((error) => {
+    console.error("Failed to open the whitelist page", error);
+  });
+});
+
 chrome.cookies.onChanged.addListener((changeInfo) => {
   const cookieDomain = changeInfo.cookie?.domain?.replace(/^\./, "");
 
