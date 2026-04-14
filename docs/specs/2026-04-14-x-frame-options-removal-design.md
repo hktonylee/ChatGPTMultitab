@@ -1,8 +1,8 @@
-# X-Frame-Options Removal Extension Design
+# ChatGPT Multitab System Extension Design
 
 ## Goal
 
-Create an unpacked Chrome extension that removes frame-blocking response headers only for user-configured URL patterns. The intended use case is local development pages that need to embed a resource which sets `X-Frame-Options`.
+Create an unpacked Chrome extension for a multitab ChatGPT workspace that removes frame-blocking response headers only for user-configured URL patterns. The intended use case is trusted local ChatGPT tab workflows that need to embed pages which set `X-Frame-Options`.
 
 ## Scope
 

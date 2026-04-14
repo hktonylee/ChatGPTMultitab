@@ -1,8 +1,8 @@
-# Configurable X-Frame-Options Remover
+# ChatGPT Multitab System
 
-Chrome extension for removing `X-Frame-Options` response headers from user-configured URL patterns.
+Chrome extension for creating a multitab ChatGPT workspace with user-configured frame access rules.
 
-This is intended for trusted local development workflows. It does not remove CSP `frame-ancestors`, and it does nothing until you add a pattern.
+This is intended for trusted local ChatGPT tab workflows. It removes `X-Frame-Options` response headers only for URL patterns you choose. It does not remove CSP `frame-ancestors`, and it does nothing until you add a pattern.
 
 ## Install
 
@@ -24,7 +24,7 @@ http://127.0.0.1:*/some/path/*
 file:///home/tonylee/example.html
 ```
 
-The extension removes these response headers for matching main-frame and sub-frame responses:
+The extension removes these response headers for matching main-frame and sub-frame responses so the multitab workspace can load trusted framed pages:
 
 - `X-Frame-Options`
 - `Frame-Options`

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Configurable X-Frame-Options Remover",
-  "description": "Removes X-Frame-Options response headers for user-configured URL patterns.",
+  "name": "ChatGPT Multitab System",
+  "description": "Creates a multitab ChatGPT workspace with trusted frame access for configured URL patterns.",
   "version": "0.1.0",
   "permissions": [
     "declarativeNetRequestWithHostAccess",
@@ -16,6 +16,6 @@
   "options_page": "options.html",
   "action": {
     "default_popup": "options.html",
-    "default_title": "X-Frame-Options Remover"
+    "default_title": "ChatGPT Multitab System"
   }
 }
