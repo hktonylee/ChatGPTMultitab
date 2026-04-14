@@ -20,7 +20,7 @@ async function clearDynamicRules() {
 
 async function refreshRules() {
   const patterns = await getStoredPatterns();
-  const addRules = XfoRuleBuilder.buildHeaderRemovalRules(patterns);
+  const addRules = XfoRuleBuilder.buildDynamicRules(patterns);
   const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
   const removeRuleIds = existingRules.map((rule) => rule.id);
 

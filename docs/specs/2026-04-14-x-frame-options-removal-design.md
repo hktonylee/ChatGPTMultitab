@@ -12,6 +12,7 @@ In scope:
 - User-configurable URL pattern list.
 - Persistent pattern storage using Chrome extension storage.
 - Dynamic `declarativeNetRequest` rules that remove `X-Frame-Options`.
+- Built-in `chatgpt.com` iframe access rule for the extension workspace.
 - Documentation for loading and configuring the unpacked extension.
 
 Out of scope:
@@ -19,12 +20,12 @@ Out of scope:
 - Publishing to the Chrome Web Store.
 - Syncing settings across browsers.
 - Bypassing CSP `frame-ancestors`; this extension only targets frame option headers.
-- Broad default behavior. No URL is modified until the user adds a pattern.
+- Broad default behavior outside the extension workspace's `chatgpt.com` iframe.
 
 ## Architecture
 
 - `manifest.json` declares a Manifest V3 extension with an options page, background service worker, storage permission, `declarativeNetRequestWithHostAccess`, and broad host permissions so user-entered patterns can work.
-- `src/rules.js` owns pure rule construction. It normalizes user patterns, assigns stable rule IDs, and builds dynamic rules that remove frame option headers.
+- `src/rules.js` owns pure rule construction. It normalizes user patterns, assigns stable rule IDs, builds a built-in `chatgpt.com` iframe access rule, and builds dynamic rules that remove frame option headers.
 - `src/background.js` reads saved patterns, installs dynamic DNR rules at startup/install, and exposes a message handler so the options page can refresh rules immediately after saving.
 - `options.html` and `src/options.js` provide a small settings UI for adding and removing patterns.
 - `test/rules.test.js` verifies rule construction without depending on Chrome APIs.
@@ -36,7 +37,7 @@ Out of scope:
 3. Options page saves patterns to `chrome.storage.local`.
 4. Options page sends a message to the background worker to refresh rules.
 5. Background worker converts patterns into dynamic DNR rules.
-6. Chrome removes `X-Frame-Options` and `Frame-Options` response headers only for matching responses.
+6. Chrome removes `X-Frame-Options` and `Frame-Options` response headers for matching responses and for `chatgpt.com` sub-frame navigations.
 
 ## Error Handling
 
