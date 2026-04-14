@@ -11,10 +11,10 @@
     "<all_urls>"
   ],
   "icons": {
-    "16": "favicon.svg",
-    "32": "favicon.svg",
-    "48": "favicon.svg",
-    "128": "favicon.svg"
+    "16": "favicon.png",
+    "32": "favicon.png",
+    "48": "favicon.png",
+    "128": "favicon.png"
   },
   "background": {
     "service_worker": "src/background.js"
@@ -22,10 +22,10 @@
   "options_page": "options.html",
   "action": {
     "default_icon": {
-      "16": "favicon.svg",
-      "32": "favicon.svg",
-      "48": "favicon.svg",
-      "128": "favicon.svg"
+      "16": "favicon.png",
+      "32": "favicon.png",
+      "48": "favicon.png",
+      "128": "favicon.png"
     },
     "default_popup": "options.html",
     "default_title": "ChatGPT Multitab System"
