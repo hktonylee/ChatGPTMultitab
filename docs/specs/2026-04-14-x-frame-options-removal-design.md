@@ -12,14 +12,14 @@ In scope:
 - User-configurable URL pattern list.
 - Persistent pattern storage using Chrome extension storage.
 - Dynamic `declarativeNetRequest` rules that remove `X-Frame-Options`.
-- Built-in `chatgpt.com` iframe access rule for the extension workspace.
+- Built-in `chatgpt.com` iframe access rule for the extension workspace that removes frame option headers and frame-blocking CSP headers.
 - Documentation for loading and configuring the unpacked extension.
 
 Out of scope:
 
 - Publishing to the Chrome Web Store.
 - Syncing settings across browsers.
-- Bypassing CSP `frame-ancestors`; this extension only targets frame option headers.
+- Bypassing CSP `frame-ancestors` for arbitrary user-configured patterns; the built-in CSP removal is limited to `chatgpt.com` sub-frame navigations.
 - Broad default behavior outside the extension workspace's `chatgpt.com` iframe.
 
 ## Architecture
@@ -38,6 +38,7 @@ Out of scope:
 4. Options page sends a message to the background worker to refresh rules.
 5. Background worker converts patterns into dynamic DNR rules.
 6. Chrome removes `X-Frame-Options` and `Frame-Options` response headers for matching responses and for `chatgpt.com` sub-frame navigations.
+7. Chrome also removes `Content-Security-Policy` and `Content-Security-Policy-Report-Only` for built-in `chatgpt.com` sub-frame navigations so `frame-ancestors` cannot block the extension workspace.
 
 ## Error Handling
 
@@ -52,6 +53,7 @@ Out of scope:
 - Patterns persist across browser restarts.
 - Saving patterns refreshes dynamic rules without reloading the extension.
 - Matching responses have `X-Frame-Options` removed.
+- Built-in `chatgpt.com` sub-frame responses have frame option headers and CSP headers removed.
 - Non-matching responses are untouched.
 - Rule-building behavior is covered by automated tests.
 

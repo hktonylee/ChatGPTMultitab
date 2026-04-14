@@ -3,6 +3,11 @@
     { header: "x-frame-options", operation: "remove" },
     { header: "frame-options", operation: "remove" },
   ];
+  const CHATGPT_IFRAME_RESPONSE_HEADER_REMOVALS = [
+    ...HEADER_REMOVALS,
+    { header: "content-security-policy", operation: "remove" },
+    { header: "content-security-policy-report-only", operation: "remove" },
+  ];
 
   const CHATGPT_IFRAME_RULE_ID = 1;
   const USER_RULE_ID_START = 100;
@@ -72,7 +77,9 @@
         requestHeaders: CHATGPT_IFRAME_REQUEST_HEADER_REMOVALS.map((headerRemoval) => ({
           ...headerRemoval,
         })),
-        responseHeaders: HEADER_REMOVALS.map((headerRemoval) => ({ ...headerRemoval })),
+        responseHeaders: CHATGPT_IFRAME_RESPONSE_HEADER_REMOVALS.map((headerRemoval) => ({
+          ...headerRemoval,
+        })),
       },
       condition: {
         urlFilter: "||chatgpt.com/",

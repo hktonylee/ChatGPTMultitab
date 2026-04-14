@@ -58,6 +58,8 @@ test("builds a chatgpt.com iframe access rule", () => {
       responseHeaders: [
         { header: "x-frame-options", operation: "remove" },
         { header: "frame-options", operation: "remove" },
+        { header: "content-security-policy", operation: "remove" },
+        { header: "content-security-policy-report-only", operation: "remove" },
       ],
     },
     condition: {
