@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatGPT Tabs</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: oklch(97% 0.01 178);
+        --ink: oklch(22% 0.04 176);
+        --muted: oklch(43% 0.035 176);
+        --line: oklch(80% 0.02 176);
+        --panel: oklch(99% 0.012 178);
+        --focus: oklch(58% 0.17 225);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--ink);
+        font-family:
+          Avenir Next,
+          Avenir,
+          Segoe UI,
+          sans-serif;
+      }
+
+      .app {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 100%;
+      }
+
+      .tabs {
+        display: flex;
+        align-items: end;
+        gap: 0.1rem;
+        min-height: 2rem;
+        padding: 0.25rem 0.35rem 0;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--line);
+        background: var(--page);
+      }
+
+      .tab {
+        min-width: 4.75rem;
+        border: 1px solid var(--line);
+        border-bottom: 0;
+        border-radius: 6px 6px 0 0;
+        padding: 0.28rem 0.65rem;
+        background: color-mix(in oklch, var(--panel), var(--page) 42%);
+        color: var(--ink);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        transition:
+          background 160ms ease,
+          border-color 160ms ease,
+          color 160ms ease;
+      }
+
+      .tab:hover {
+        background: var(--panel);
+      }
+
+      .tab:focus-visible,
+      .add-tab:focus-visible {
+        outline: 3px solid color-mix(in oklch, var(--focus), transparent 62%);
+        outline-offset: 2px;
+      }
+
+      .tab[aria-selected="true"] {
+        position: relative;
+        z-index: 1;
+        margin-bottom: -1px;
+        padding-bottom: calc(0.28rem + 1px);
+        background: var(--panel);
+        color: var(--ink);
+      }
+
+      .add-tab {
+        width: 1.8rem;
+        height: 1.55rem;
+        border: 1px solid transparent;
+        border-radius: 6px 6px 0 0;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 1rem;
+        line-height: 1;
+      }
+
+      .add-tab:hover {
+        background: color-mix(in oklch, var(--panel), var(--page) 42%);
+        color: var(--ink);
+      }
+
+      main {
+        min-height: 0;
+      }
+
+      .panel {
+        display: none;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .panel.active {
+        display: block;
+      }
+
+      iframe {
+        width: 100%;
+        height: 100%;
+        min-height: calc(100vh - 2rem);
+        border: 0;
+        background: var(--panel);
+      }
+
+      @media (max-width: 720px) {
+        .tab {
+          min-width: 4.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <nav class="tabs" aria-label="ChatGPT iframe tabs" role="tablist">
+        <button class="tab" id="tab-chat-1" role="tab" aria-selected="true" aria-controls="panel-chat-1" type="button">
+          Chat 1
+        </button>
+        <button class="add-tab" type="button" aria-label="New chat tab">+</button>
+      </nav>
+
+      <main>
+        <section class="panel active" id="panel-chat-1" role="tabpanel" aria-labelledby="tab-chat-1">
+          <iframe frameborder="0" src="https://chatgpt.com" allow="camera; clipboard-write; fullscreen; microphone; geolocation" title="ChatGPT home"></iframe>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const tabList = document.querySelector('[role="tablist"]');
+      const addTabButton = document.querySelector('.add-tab');
+      const main = document.querySelector('main');
+      let nextChatId = 2;
+
+      function getTabs() {
+        return [...document.querySelectorAll('[role="tab"]')];
+      }
+
+      function getPanels() {
+        return [...document.querySelectorAll('[role="tabpanel"]')];
+      }
+
+      function activateTab(tab) {
+        const tabs = getTabs();
+        const panels = getPanels();
+
+        tabs.forEach((item) => {
+          item.setAttribute('aria-selected', String(item === tab));
+          item.tabIndex = item === tab ? 0 : -1;
+        });
+
+        panels.forEach((panel) => {
+          const isActive = panel.id === tab.getAttribute('aria-controls');
+          panel.classList.toggle('active', isActive);
+          panel.hidden = !isActive;
+        });
+
+        tab.focus();
+      }
+
+      function addChatTab() {
+        const chatId = nextChatId;
+        nextChatId += 1;
+
+        const tab = document.createElement('button');
+        tab.className = 'tab';
+        tab.id = `tab-chat-${chatId}`;
+        tab.type = 'button';
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', 'false');
+        tab.setAttribute('aria-controls', `panel-chat-${chatId}`);
+        tab.textContent = `Chat ${chatId}`;
+
+        const panel = document.createElement('section');
+        panel.className = 'panel';
+        panel.id = `panel-chat-${chatId}`;
+        panel.setAttribute('role', 'tabpanel');
+        panel.hidden = true;
+        panel.setAttribute('aria-labelledby', tab.id);
+        panel.innerHTML = '<iframe frameborder="0" src="https://chatgpt.com" allow="camera; clipboard-write; fullscreen; microphone; geolocation" title="ChatGPT home"></iframe>';
+
+        tabList.insertBefore(tab, addTabButton);
+        main.append(panel);
+        activateTab(tab);
+      }
+
+      tabList.addEventListener('click', (event) => {
+        const tab = event.target.closest('[role="tab"]');
+
+        if (tab) {
+          activateTab(tab);
+          return;
+        }
+
+        if (event.target.closest('.add-tab')) {
+          addChatTab();
+        }
+      });
+
+      tabList.addEventListener('keydown', (event) => {
+        const tab = event.target.closest('[role="tab"]');
+
+        if (!tab) {
+          return;
+        }
+
+        const tabs = getTabs();
+        const index = tabs.indexOf(tab);
+        const direction = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+
+        if (!direction) {
+          return;
+        }
+
+        event.preventDefault();
+        activateTab(tabs[(index + direction + tabs.length) % tabs.length]);
+      });
+
+      getTabs().forEach((tab, index) => {
+        tab.tabIndex = index === 0 ? 0 : -1;
+      });
+    </script>
+  </body>
+</html>
