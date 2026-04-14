@@ -38,7 +38,11 @@
   }
 
   function escapeRegExp(value) {
-    return value.replace(/[|\\{}()[\]^$+?.]/g, "\\$&");
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function buildExactUrlRegex(url) {
+    return `^${escapeRegExp(url)}$`;
   }
 
   function doesUrlMatchPattern(url, pattern) {
@@ -49,8 +53,7 @@
       return false;
     }
 
-    const expression = normalizedPattern.split("*").map(escapeRegExp).join(".*");
-    return new RegExp(`^${expression}$`).test(normalizedUrl);
+    return normalizedUrl === normalizedPattern;
   }
 
   function buildHeaderRemovalRules(patterns) {
@@ -62,7 +65,7 @@
         responseHeaders: HEADER_REMOVALS.map((headerRemoval) => ({ ...headerRemoval })),
       },
       condition: {
-        urlFilter: pattern,
+        regexFilter: buildExactUrlRegex(pattern),
         resourceTypes: ["main_frame", "sub_frame"],
       },
     }));

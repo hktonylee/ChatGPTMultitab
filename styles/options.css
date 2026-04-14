@@ -108,6 +108,14 @@ li button:hover {
   background: #881337;
 }
 
+li button.secondary {
+  background: #404040;
+}
+
+li button.secondary:hover {
+  background: #262626;
+}
+
 #empty-state {
   margin-top: 12px;
   color: #666;

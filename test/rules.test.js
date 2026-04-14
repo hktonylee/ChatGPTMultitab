@@ -12,17 +12,17 @@ const {
 test("normalizes patterns by trimming blanks and removing duplicates", () => {
   assert.deepEqual(
     normalizePatterns([
-      "  http://localhost:8080/*  ",
+      "  http://localhost:8080/  ",
       "",
-      "http://localhost:8080/*",
+      "http://localhost:8080/",
       "file:///home/tonylee/example.html",
     ]),
-    ["http://localhost:8080/*", "file:///home/tonylee/example.html"],
+    ["http://localhost:8080/", "file:///home/tonylee/example.html"],
   );
 });
 
 test("builds dynamic rules that remove frame option response headers", () => {
-  assert.deepEqual(buildHeaderRemovalRules(["http://localhost:8080/*"]), [
+  assert.deepEqual(buildHeaderRemovalRules(["http://localhost:8080/?tab=1"]), [
     {
       id: 100,
       priority: 1,
@@ -34,7 +34,7 @@ test("builds dynamic rules that remove frame option response headers", () => {
         ],
       },
       condition: {
-        urlFilter: "http://localhost:8080/*",
+        regexFilter: "^http://localhost:8080/\\?tab=1$",
         resourceTypes: ["main_frame", "sub_frame"],
       },
     },
@@ -76,11 +76,15 @@ test("combines chatgpt iframe request cleanup with configured response header ru
   );
 });
 
-test("matches urls against stored wildcard patterns", () => {
-  assert.equal(doesUrlMatchPattern("https://chatgpt.com/c/123", "https://chatgpt.com/*"), true);
+test("matches urls against stored patterns exactly", () => {
+  assert.equal(
+    doesUrlMatchPattern("https://chatgpt.com/c/123", "https://chatgpt.com/c/123"),
+    true,
+  );
+  assert.equal(doesUrlMatchPattern("https://chatgpt.com/c/123", "https://chatgpt.com/*"), false);
   assert.equal(
     doesUrlMatchPattern("http://127.0.0.1:5173/app", "http://127.0.0.1:*/app"),
-    true,
+    false,
   );
   assert.equal(doesUrlMatchPattern("https://example.com/", "https://chatgpt.com/*"), false);
 });

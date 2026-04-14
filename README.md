@@ -2,7 +2,7 @@
 
 Chrome extension for creating a multitab ChatGPT workspace with user-configured frame access rules.
 
-This is intended for trusted local ChatGPT tab workflows. It includes a built-in `chatgpt.com` iframe access rule, removes ChatGPT frame-blocking CSP headers for sub-frame navigations, and removes `X-Frame-Options` response headers for URL patterns you choose.
+This is intended for trusted local ChatGPT tab workflows. It includes a built-in `chatgpt.com` iframe access rule, removes ChatGPT frame-blocking CSP headers for sub-frame navigations, and removes `X-Frame-Options` response headers for exact URLs you choose.
 
 ## Install
 
@@ -12,15 +12,15 @@ This is intended for trusted local ChatGPT tab workflows. It includes a built-in
 4. Select this project directory.
 5. Open the extension details and choose Extension options, or click the extension toolbar button.
 
-For `file://` patterns, open the extension details page and enable Allow access to file URLs.
+For `file://` URLs, open the extension details page and enable Allow access to file URLs.
 
 ## Configure
 
-Add one or more URL filter patterns, then save them from the options page. Examples:
+Add one or more exact URLs, then save them from the options page. Examples:
 
 ```text
-http://localhost:8080/*
-http://127.0.0.1:*/some/path/*
+http://localhost:8080/
+http://127.0.0.1:5173/some/path/
 file:///home/tonylee/example.html
 ```
 

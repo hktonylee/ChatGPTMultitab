@@ -20,14 +20,20 @@ function renderPatterns() {
   for (const pattern of patterns) {
     const item = document.createElement("li");
     const code = document.createElement("code");
+    const openButton = document.createElement("button");
     const removeButton = document.createElement("button");
 
     code.textContent = pattern;
+    openButton.type = "button";
+    openButton.className = "secondary";
+    openButton.textContent = "Open";
+    openButton.addEventListener("click", () => openPattern(pattern));
+
     removeButton.type = "button";
     removeButton.textContent = "Remove";
     removeButton.addEventListener("click", () => removePattern(pattern));
 
-    item.append(code, removeButton);
+    item.append(code, openButton, removeButton);
     list.append(item);
   }
 }
@@ -48,7 +54,7 @@ async function savePatterns(nextPatterns) {
   const ruleCount = await refreshRules();
 
   renderPatterns();
-  setStatus(`Saved ${ruleCount} active pattern${ruleCount === 1 ? "" : "s"}.`);
+  setStatus(`Saved ${ruleCount} active URL${ruleCount === 1 ? "" : "s"}.`);
 }
 
 async function removePattern(pattern) {
@@ -59,12 +65,20 @@ async function removePattern(pattern) {
   }
 }
 
+async function openPattern(pattern) {
+  try {
+    await chrome.tabs.create({ url: pattern });
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const pattern = input.value.trim();
   if (!pattern) {
-    setStatus("Enter a URL pattern before adding it.", true);
+    setStatus("Enter an exact URL before adding it.", true);
     return;
   }
 

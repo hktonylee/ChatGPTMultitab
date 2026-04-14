@@ -9,34 +9,34 @@
   <body>
     <main>
       <h1>ChatGPT Multitab System</h1>
-      <p class="intro">Allow trusted pages to load ChatGPT tabs by removing frame-blocking headers for the URL patterns you choose.</p>
+      <p class="intro">Allow trusted pages to load ChatGPT tabs by removing frame-blocking headers for the exact URLs you choose.</p>
 
       <form id="pattern-form">
-        <label for="pattern-input">URL pattern</label>
+        <label for="pattern-input">Exact URL</label>
         <div class="entry-row">
           <input
             id="pattern-input"
             name="pattern"
             type="text"
             autocomplete="off"
-            placeholder="http://localhost:8080/*"
+            placeholder="http://localhost:8080/"
           >
           <button type="submit">Add</button>
         </div>
       </form>
 
       <section aria-labelledby="patterns-heading">
-        <h2 id="patterns-heading">Active patterns</h2>
+        <h2 id="patterns-heading">Active URLs</h2>
         <ul id="pattern-list"></ul>
-        <p id="empty-state">No patterns configured.</p>
+        <p id="empty-state">No URLs configured.</p>
       </section>
 
       <p id="status" role="status" aria-live="polite"></p>
 
       <section class="examples" aria-labelledby="examples-heading">
         <h2 id="examples-heading">Examples</h2>
-        <code>http://localhost:8080/*</code>
-        <code>http://127.0.0.1:*/some/path/*</code>
+        <code>http://localhost:8080/</code>
+        <code>http://127.0.0.1:5173/some/path/</code>
         <code>file:///home/tonylee/example.html</code>
       </section>
     </main>
