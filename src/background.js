@@ -1,12 +1,24 @@
-importScripts("rules.js");
+if (typeof importScripts === "function") {
+  importScripts("rules.js");
+}
+
+if (typeof require === "function" && typeof XfoRuleBuilder === "undefined") {
+  globalThis.XfoRuleBuilder = require("./rules");
+}
 
 const STORAGE_KEY = "urlPatterns";
+const PRIMARY_STORAGE_KEY = "primaryUrl";
 const CHATGPT_COOKIE_URL = "https://chatgpt.com/";
 const CHATGPT_COOKIE_DOMAIN = "chatgpt.com";
 
 async function getStoredPatterns() {
   const stored = await chrome.storage.local.get({ [STORAGE_KEY]: [] });
   return stored[STORAGE_KEY];
+}
+
+async function getPrimaryPattern(extensionChrome = chrome) {
+  const stored = await extensionChrome.storage.local.get({ [PRIMARY_STORAGE_KEY]: "" });
+  return String(stored[PRIMARY_STORAGE_KEY] || "").trim();
 }
 
 async function clearDynamicRules() {
@@ -46,47 +58,66 @@ async function refreshRules() {
   return addRules.length;
 }
 
-chrome.runtime.onInstalled.addListener(() => {
-  refreshRules().catch((error) => {
-    console.error("Failed to initialize X-Frame-Options removal rules", error);
-  });
-});
+async function handleActionClick(extensionChrome = chrome) {
+  const primaryPattern = await getPrimaryPattern(extensionChrome);
 
-chrome.runtime.onStartup.addListener(() => {
-  refreshRules().catch((error) => {
-    console.error("Failed to refresh X-Frame-Options removal rules", error);
-  });
-});
-
-chrome.action.onClicked.addListener(() => {
-  chrome.runtime.openOptionsPage().catch((error) => {
-    console.error("Failed to open the whitelist page", error);
-  });
-});
-
-chrome.cookies.onChanged.addListener((changeInfo) => {
-  const cookieDomain = changeInfo.cookie?.domain?.replace(/^\./, "");
-
-  if (cookieDomain !== CHATGPT_COOKIE_DOMAIN) {
+  if (primaryPattern) {
+    await extensionChrome.tabs.create({ url: primaryPattern });
     return;
   }
 
-  refreshRules().catch((error) => {
-    console.error("Failed to refresh ChatGPT cookie header rule", error);
-  });
-});
+  await extensionChrome.runtime.openOptionsPage();
+}
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (!message || message.type !== "refreshRules") {
-    return false;
-  }
-
-  refreshRules()
-    .then((ruleCount) => sendResponse({ ok: true, ruleCount }))
-    .catch((error) => {
-      console.error("Failed to refresh X-Frame-Options removal rules", error);
-      sendResponse({ ok: false, error: error.message });
+if (typeof chrome !== "undefined" && chrome.runtime) {
+  chrome.runtime.onInstalled.addListener(() => {
+    refreshRules().catch((error) => {
+      console.error("Failed to initialize X-Frame-Options removal rules", error);
     });
+  });
 
-  return true;
-});
+  chrome.runtime.onStartup.addListener(() => {
+    refreshRules().catch((error) => {
+      console.error("Failed to refresh X-Frame-Options removal rules", error);
+    });
+  });
+
+  chrome.action.onClicked.addListener(() => {
+    handleActionClick().catch((error) => {
+      console.error("Failed to open the primary page", error);
+    });
+  });
+
+  chrome.cookies.onChanged.addListener((changeInfo) => {
+    const cookieDomain = changeInfo.cookie?.domain?.replace(/^\./, "");
+
+    if (cookieDomain !== CHATGPT_COOKIE_DOMAIN) {
+      return;
+    }
+
+    refreshRules().catch((error) => {
+      console.error("Failed to refresh ChatGPT cookie header rule", error);
+    });
+  });
+
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (!message || message.type !== "refreshRules") {
+      return false;
+    }
+
+    refreshRules()
+      .then((ruleCount) => sendResponse({ ok: true, ruleCount }))
+      .catch((error) => {
+        console.error("Failed to refresh X-Frame-Options removal rules", error);
+        sendResponse({ ok: false, error: error.message });
+      });
+
+    return true;
+  });
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    handleActionClick,
+  };
+}
