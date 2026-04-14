@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const {
+  buildChatGptCookieHeader,
   buildChatGptIframeRequestHeaderRule,
   buildDynamicRules,
   buildHeaderRemovalRules,
@@ -67,6 +68,49 @@ test("builds a chatgpt.com iframe access rule", () => {
       resourceTypes: ["sub_frame"],
     },
   });
+});
+
+test("builds a chatgpt.com iframe access rule with an injected cookie header", () => {
+  assert.deepEqual(
+    buildChatGptIframeRequestHeaderRule("a=1; b=two"),
+    {
+      id: 1,
+      priority: 2,
+      action: {
+        type: "modifyHeaders",
+        requestHeaders: [
+          { header: "sec-fetch-dest", operation: "remove" },
+          { header: "sec-fetch-mode", operation: "remove" },
+          { header: "sec-fetch-site", operation: "remove" },
+          { header: "sec-fetch-user", operation: "remove" },
+          { header: "referer", operation: "remove" },
+          { header: "origin", operation: "remove" },
+          { header: "cookie", operation: "set", value: "a=1; b=two" },
+        ],
+        responseHeaders: [
+          { header: "x-frame-options", operation: "remove" },
+          { header: "frame-options", operation: "remove" },
+          { header: "content-security-policy", operation: "remove" },
+          { header: "content-security-policy-report-only", operation: "remove" },
+        ],
+      },
+      condition: {
+        urlFilter: "||chatgpt.com/",
+        resourceTypes: ["sub_frame"],
+      },
+    },
+  );
+});
+
+test("serializes chatgpt cookies into a request header value", () => {
+  assert.equal(
+    buildChatGptCookieHeader([
+      { name: "__Secure-next-auth.session-token", value: "abc" },
+      { name: "oai-did", value: "xyz" },
+    ]),
+    "__Secure-next-auth.session-token=abc; oai-did=xyz",
+  );
+  assert.equal(buildChatGptCookieHeader([]), "");
 });
 
 test("combines chatgpt iframe request cleanup with configured response header rules", () => {

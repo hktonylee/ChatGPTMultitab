@@ -20,6 +20,13 @@
     { header: "origin", operation: "remove" },
   ];
 
+  function buildChatGptCookieHeader(cookies) {
+    return (cookies || [])
+      .filter((cookie) => cookie && cookie.name)
+      .map((cookie) => `${cookie.name}=${cookie.value || ""}`)
+      .join("; ");
+  }
+
   function normalizePatterns(patterns) {
     const seen = new Set();
     const normalized = [];
@@ -71,15 +78,25 @@
     }));
   }
 
-  function buildChatGptIframeRequestHeaderRule() {
+  function buildChatGptIframeRequestHeaderRule(cookieHeaderValue = "") {
+    const requestHeaders = CHATGPT_IFRAME_REQUEST_HEADER_REMOVALS.map((headerRemoval) => ({
+      ...headerRemoval,
+    }));
+
+    if (cookieHeaderValue) {
+      requestHeaders.push({
+        header: "cookie",
+        operation: "set",
+        value: cookieHeaderValue,
+      });
+    }
+
     return {
       id: CHATGPT_IFRAME_RULE_ID,
       priority: 2,
       action: {
         type: "modifyHeaders",
-        requestHeaders: CHATGPT_IFRAME_REQUEST_HEADER_REMOVALS.map((headerRemoval) => ({
-          ...headerRemoval,
-        })),
+        requestHeaders,
         responseHeaders: CHATGPT_IFRAME_RESPONSE_HEADER_REMOVALS.map((headerRemoval) => ({
           ...headerRemoval,
         })),
@@ -91,11 +108,15 @@
     };
   }
 
-  function buildDynamicRules(patterns) {
-    return [buildChatGptIframeRequestHeaderRule(), ...buildHeaderRemovalRules(patterns)];
+  function buildDynamicRules(patterns, cookieHeaderValue = "") {
+    return [
+      buildChatGptIframeRequestHeaderRule(cookieHeaderValue),
+      ...buildHeaderRemovalRules(patterns),
+    ];
   }
 
   const api = {
+    buildChatGptCookieHeader,
     buildChatGptIframeRequestHeaderRule,
     buildDynamicRules,
     buildHeaderRemovalRules,

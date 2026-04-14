@@ -4,6 +4,8 @@
   "description": "Creates a multitab ChatGPT workspace with trusted frame access for configured exact URLs.",
   "version": "0.1.0",
   "permissions": [
+    "activeTab",
+    "cookies",
     "declarativeNetRequestWithHostAccess",
     "storage"
   ],

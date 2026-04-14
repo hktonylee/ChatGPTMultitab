@@ -1,6 +1,8 @@
 importScripts("rules.js");
 
 const STORAGE_KEY = "urlPatterns";
+const CHATGPT_COOKIE_URL = "https://chatgpt.com/";
+const CHATGPT_COOKIE_DOMAIN = "chatgpt.com";
 
 async function getStoredPatterns() {
   const stored = await chrome.storage.local.get({ [STORAGE_KEY]: [] });
@@ -18,9 +20,21 @@ async function clearDynamicRules() {
   await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds });
 }
 
+async function getChatGptCookieHeader() {
+  const cookies = await chrome.cookies.getAll({ url: CHATGPT_COOKIE_URL });
+
+  if (cookies.length > 0) {
+    return XfoRuleBuilder.buildChatGptCookieHeader(cookies);
+  }
+
+  const domainCookies = await chrome.cookies.getAll({ domain: CHATGPT_COOKIE_DOMAIN });
+  return XfoRuleBuilder.buildChatGptCookieHeader(domainCookies);
+}
+
 async function refreshRules() {
   const patterns = await getStoredPatterns();
-  const addRules = XfoRuleBuilder.buildDynamicRules(patterns);
+  const cookieHeaderValue = await getChatGptCookieHeader();
+  const addRules = XfoRuleBuilder.buildDynamicRules(patterns, cookieHeaderValue);
   const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
   const removeRuleIds = existingRules.map((rule) => rule.id);
 
@@ -41,6 +55,18 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onStartup.addListener(() => {
   refreshRules().catch((error) => {
     console.error("Failed to refresh X-Frame-Options removal rules", error);
+  });
+});
+
+chrome.cookies.onChanged.addListener((changeInfo) => {
+  const cookieDomain = changeInfo.cookie?.domain?.replace(/^\./, "");
+
+  if (cookieDomain !== CHATGPT_COOKIE_DOMAIN) {
+    return;
+  }
+
+  refreshRules().catch((error) => {
+    console.error("Failed to refresh ChatGPT cookie header rule", error);
   });
 });
 
