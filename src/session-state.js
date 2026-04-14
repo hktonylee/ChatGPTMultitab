@@ -1,6 +1,7 @@
 (function attachSessionState(root) {
   const DEFAULT_CHAT_URL = "https://chatgpt.com/";
   const DEFAULT_CHAT_TITLE = "ChatGPT";
+  const CHATGPT_HOSTNAME = "chatgpt.com";
 
   function createTabState(id, title = DEFAULT_CHAT_TITLE, url = DEFAULT_CHAT_URL) {
     const numericId = Number(id);
@@ -22,7 +23,19 @@
 
   function normalizeTabUrl(url) {
     try {
-      return new URL(String(url || "").trim()).href;
+      const rawUrl = String(url || "").trim();
+
+      if (!/^https:\/\//i.test(rawUrl)) {
+        return DEFAULT_CHAT_URL;
+      }
+
+      const normalizedUrl = new URL(rawUrl);
+
+      if (normalizedUrl.protocol !== "https:" || normalizedUrl.hostname !== CHATGPT_HOSTNAME) {
+        return DEFAULT_CHAT_URL;
+      }
+
+      return normalizedUrl.href;
     } catch (_error) {
       return DEFAULT_CHAT_URL;
     }
