@@ -1,4 +1,4 @@
-let lastReportedUrl = "";
+let lastReportedPayload = "";
 let scheduledReport = 0;
 
 function getCandidateChatUrls() {
@@ -9,18 +9,21 @@ function getCandidateChatUrls() {
 
 function reportLocationToParent() {
   const url = ChatGptUrl.extractPersistedChatUrl(window.location.href, getCandidateChatUrls());
+  const title = String(document.title || "").trim();
+  const payload = JSON.stringify({ url, title });
 
-  if (!url || url === lastReportedUrl) {
+  if (!url || payload === lastReportedPayload) {
     return;
   }
 
-  lastReportedUrl = url;
+  lastReportedPayload = payload;
 
   window.parent.postMessage(
     {
       source: "chatgpt-multitab",
       type: "chatgpt-location",
       url,
+      title,
     },
     "*",
   );

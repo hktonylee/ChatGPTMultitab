@@ -65,7 +65,7 @@ test("builds a chatgpt.com iframe access rule", () => {
     },
     condition: {
       urlFilter: "||chatgpt.com/",
-      resourceTypes: ["sub_frame"],
+      resourceTypes: ["sub_frame", "image", "xmlhttprequest", "media"],
     },
   });
 });
@@ -96,7 +96,7 @@ test("builds a chatgpt.com iframe access rule with an injected cookie header", (
       },
       condition: {
         urlFilter: "||chatgpt.com/",
-        resourceTypes: ["sub_frame"],
+        resourceTypes: ["sub_frame", "image", "xmlhttprequest", "media"],
       },
     },
   );

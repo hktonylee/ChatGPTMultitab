@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Multi-ChatGPT</title>
+    <title>ChatGPT Multitab</title>
     <link rel="icon" type="image/svg+xml" href="favicon-inverted.svg">
     <style>
       :root {
@@ -60,6 +60,7 @@
 
       .tab {
         min-width: 4.75rem;
+        max-width: 150px;
         border: 1px solid var(--line);
         border-bottom: 0;
         border-radius: 6px 6px 0 0;
@@ -70,6 +71,9 @@
         font: inherit;
         font-size: 0.82rem;
         font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         transition:
           background 160ms ease,
           border-color 160ms ease,
@@ -187,7 +191,7 @@
       const tabList = document.querySelector('[role="tablist"]');
       const addTabButton = document.querySelector('.add-tab');
       const main = document.querySelector('main');
-      let nextChatId = 2;
+      let nextTabId = 2;
 
       function getTabs() {
         return [...document.querySelectorAll('[role="tab"]')];
@@ -225,6 +229,10 @@
         return document.getElementById(tab.getAttribute('aria-controls'));
       }
 
+      function getTabForPanel(panel) {
+        return panel ? document.getElementById(panel.getAttribute('aria-labelledby')) : null;
+      }
+
       function createChatIframe(url, title) {
         const iframe = document.createElement('iframe');
         iframe.frameBorder = '0';
@@ -255,7 +263,6 @@
         const activeTab = getTabs().find((tab) => tab.getAttribute('aria-selected') === 'true');
         const session = {
           activeTabId: activeTab ? getTabId(activeTab) : tabs[0]?.id || 1,
-          nextChatId,
           tabs,
         };
 
@@ -292,7 +299,8 @@
         const parsed = stored ? JSON.parse(stored) : null;
         const session = SessionState.sanitizeStoredTabState(parsed);
 
-        nextChatId = session.nextChatId;
+        nextTabId =
+          session.tabs.reduce((maxId, tabState) => Math.max(maxId, Number(tabState.id) || 0), 0) + 1;
 
         getTabs().forEach((tab) => tab.remove());
         getPanels().forEach((panel) => panel.remove());
@@ -328,9 +336,11 @@
       }
 
       function addChatTab(url = SessionState.DEFAULT_CHAT_URL) {
-        const chatId = nextChatId;
-        nextChatId += 1;
-        const tab = createChatTab(SessionState.createTabState(chatId, `Chat ${chatId}`, url));
+        const chatId = nextTabId;
+        nextTabId += 1;
+        const tab = createChatTab(
+          SessionState.createTabState(chatId, SessionState.DEFAULT_CHAT_TITLE, url),
+        );
         activateTab(tab);
       }
 
@@ -362,15 +372,50 @@
           return;
         }
 
-        const matchingIframe = getPanels()
-          .map((panel) => panel.querySelector('iframe'))
-          .find((iframe) => iframe && iframe.contentWindow === sourceWindow);
+        const matchingPanel = getPanels().find((panel) => {
+          const iframe = panel.querySelector('iframe');
+          return iframe && iframe.contentWindow === sourceWindow;
+        });
+
+        const matchingIframe = matchingPanel?.querySelector('iframe');
 
         if (!matchingIframe) {
           return;
         }
 
         matchingIframe.dataset.reportedChatUrl = SessionState.normalizeTabUrl(url);
+        return { iframe: matchingIframe, panel: matchingPanel };
+      }
+
+      function updateTabTitleFromMessage(panel, title) {
+        const nextTitle = String(title || '').trim();
+
+        if (!panel || !nextTitle) {
+          return;
+        }
+
+        const tab = getTabForPanel(panel);
+
+        if (!tab) {
+          return;
+        }
+
+        tab.textContent = nextTitle;
+        const iframe = panel.querySelector('iframe');
+
+        if (iframe) {
+          iframe.title = nextTitle;
+        }
+      }
+
+      function handleFrameReport(sourceWindow, url, title) {
+        const result = updatePanelUrlFromMessage(sourceWindow, url);
+
+        if (!result) {
+          return;
+        }
+
+        updateTabTitleFromMessage(result.panel, title);
         persistSession();
       }
 
@@ -426,7 +471,7 @@
           return;
         }
 
-        updatePanelUrlFromMessage(event.source, event.data.url);
+        handleFrameReport(event.source, event.data.url, event.data.title);
       });
 
       restoreSession();

@@ -1,9 +1,10 @@
 (function attachSessionState(root) {
   const DEFAULT_CHAT_URL = "https://chatgpt.com/";
+  const DEFAULT_CHAT_TITLE = "ChatGPT";
 
-  function createTabState(id, title = `Chat ${id}`, url = DEFAULT_CHAT_URL) {
+  function createTabState(id, title = DEFAULT_CHAT_TITLE, url = DEFAULT_CHAT_URL) {
     const numericId = Number(id);
-    const normalizedTitle = String(title || "").trim() || `Chat ${numericId}`;
+    const normalizedTitle = String(title || "").trim() || DEFAULT_CHAT_TITLE;
 
     return {
       id: numericId,
@@ -15,7 +16,6 @@
   function buildInitialTabState() {
     return {
       activeTabId: 1,
-      nextChatId: 2,
       tabs: [createTabState(1)],
     };
   }
@@ -46,21 +46,19 @@
       return buildInitialTabState();
     }
 
-    const maxId = tabs.reduce((currentMax, tab) => Math.max(currentMax, tab.id), 0);
     const activeTabId = tabs.some((tab) => tab.id === storedState?.activeTabId)
       ? Number(storedState.activeTabId)
       : tabs[0].id;
-    const nextChatId = Math.max(Number(storedState?.nextChatId) || 0, maxId + 1);
 
     return {
       activeTabId,
-      nextChatId,
       tabs,
     };
   }
 
   const api = {
     DEFAULT_CHAT_URL,
+    DEFAULT_CHAT_TITLE,
     buildInitialTabState,
     createTabState,
     normalizeTabUrl,

@@ -19,6 +19,7 @@
     { header: "referer", operation: "remove" },
     { header: "origin", operation: "remove" },
   ];
+  const CHATGPT_RESOURCE_TYPES = ["sub_frame", "image", "xmlhttprequest", "media"];
 
   function buildChatGptCookieHeader(cookies) {
     return (cookies || [])
@@ -103,7 +104,7 @@
       },
       condition: {
         urlFilter: "||chatgpt.com/",
-        resourceTypes: ["sub_frame"],
+        resourceTypes: [...CHATGPT_RESOURCE_TYPES],
       },
     };
   }
