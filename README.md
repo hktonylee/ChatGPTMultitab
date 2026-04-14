@@ -2,7 +2,7 @@
 
 Chrome extension for creating a multitab ChatGPT workspace with user-configured frame access rules.
 
-This is intended for trusted local ChatGPT tab workflows. It includes a built-in `chatgpt.com` iframe access rule, mirrors current `chatgpt.com` cookies into matching iframe requests, removes ChatGPT frame-blocking CSP headers for sub-frame navigations, and removes `X-Frame-Options` response headers for exact URLs you choose.
+This is intended for trusted local ChatGPT tab workflows. It includes a built-in `chatgpt.com` iframe access rule, mirrors current `chatgpt.com` cookies into matching iframe requests, restores saved ChatGPT tabs after a refresh, removes ChatGPT frame-blocking CSP headers for sub-frame navigations, and removes `X-Frame-Options` response headers for exact URLs you choose.
 
 ## Install
 

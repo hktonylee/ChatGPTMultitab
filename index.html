@@ -3,16 +3,20 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ChatGPT Tabs</title>
+    <title>Multi-ChatGPT</title>
+    <link rel="icon" type="image/svg+xml" href="favicon-inverted.svg">
     <style>
       :root {
         color-scheme: light;
-        --page: oklch(97% 0.01 178);
-        --ink: oklch(22% 0.04 176);
-        --muted: oklch(43% 0.035 176);
-        --line: oklch(80% 0.02 176);
-        --panel: oklch(99% 0.012 178);
+        --page: oklch(97% 0 0);
+        --ink: oklch(22% 0 0);
+        --muted: oklch(43% 0 0);
+        --line: oklch(80% 0 0);
+        --panel: oklch(99% 0 0);
         --focus: oklch(58% 0.17 225);
+        --active: oklch(62% 0 0);
+        --active-ink: oklch(22% 0 0);
+        --active-line: oklch(58% 0 0);
       }
 
       * {
@@ -22,6 +26,7 @@
       html,
       body {
         height: 100%;
+        overflow: hidden;
       }
 
       body {
@@ -38,7 +43,8 @@
       .app {
         display: grid;
         grid-template-rows: auto 1fr;
-        min-height: 100%;
+        height: 100vh;
+        overflow: hidden;
       }
 
       .tabs {
@@ -47,7 +53,7 @@
         gap: 0.1rem;
         min-height: 2rem;
         padding: 0.25rem 0.35rem 0;
-        overflow-x: auto;
+        overflow: hidden;
         border-bottom: 1px solid var(--line);
         background: var(--page);
       }
@@ -85,11 +91,27 @@
         z-index: 1;
         margin-bottom: -1px;
         padding-bottom: calc(0.28rem + 1px);
-        background: var(--panel);
-        color: var(--ink);
+        border-color: var(--active-line);
+        color: var(--active-ink);
+        box-shadow:
+          inset 0 3px 0 var(--active),
+          0 1px 0 var(--panel);
       }
 
       .add-tab {
+        width: 1.8rem;
+        height: 1.55rem;
+        border: 1px solid transparent;
+        border-radius: 6px 6px 0 0;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 1rem;
+        line-height: 1;
+      }
+
+      .toolbar-button {
         width: 1.8rem;
         height: 1.55rem;
         border: 1px solid transparent;
@@ -107,14 +129,21 @@
         color: var(--ink);
       }
 
+      .toolbar-button:hover {
+        background: color-mix(in oklch, var(--panel), var(--page) 42%);
+        color: var(--ink);
+      }
+
       main {
         min-height: 0;
+        overflow: hidden;
       }
 
       .panel {
         display: none;
         height: 100%;
         min-height: 0;
+        overflow: hidden;
       }
 
       .panel.active {
@@ -124,7 +153,6 @@
       iframe {
         width: 100%;
         height: 100%;
-        min-height: calc(100vh - 2rem);
         border: 0;
         background: var(--panel);
       }
@@ -143,6 +171,7 @@
           Chat 1
         </button>
         <button class="add-tab" type="button" aria-label="New chat tab">+</button>
+        <button class="toolbar-button open-tab" type="button" aria-label="Open active chat in new browser tab" title="Open active chat in new browser tab">&#8599;</button>
       </nav>
 
       <main>
@@ -152,7 +181,9 @@
       </main>
     </div>
 
+    <script src="src/session-state.js"></script>
     <script>
+      const SESSION_STORAGE_KEY = 'chatgpt-multitab-session';
       const tabList = document.querySelector('[role="tablist"]');
       const addTabButton = document.querySelector('.add-tab');
       const main = document.querySelector('main');
@@ -164,6 +195,117 @@
 
       function getPanels() {
         return [...document.querySelectorAll('[role="tabpanel"]')];
+      }
+
+      function getActivePanel() {
+        return getPanels().find((panel) => !panel.hidden);
+      }
+
+      function getActiveFrameUrl() {
+        const activePanel = getActivePanel();
+        const iframe = activePanel?.querySelector('iframe');
+        return iframe?.dataset.reportedChatUrl || iframe?.dataset.currentUrl || iframe?.src || '';
+      }
+
+      function openActiveFrameInBrowserTab() {
+        const url = getActiveFrameUrl();
+
+        if (!url) {
+          return;
+        }
+
+        window.open(url, '_blank', 'noopener');
+      }
+
+      function getTabId(tab) {
+        return Number(tab?.dataset.chatId || tab?.id.replace('tab-chat-', ''));
+      }
+
+      function getPanelForTab(tab) {
+        return document.getElementById(tab.getAttribute('aria-controls'));
+      }
+
+      function createChatIframe(url, title) {
+        const iframe = document.createElement('iframe');
+        iframe.frameBorder = '0';
+        iframe.src = url;
+        iframe.dataset.currentUrl = url;
+        iframe.dataset.reportedChatUrl = url;
+        iframe.allow = 'camera; clipboard-write; fullscreen; microphone; geolocation';
+        iframe.title = title;
+        return iframe;
+      }
+
+      function persistSession() {
+        const tabs = getTabs().map((tab) => {
+          const panel = getPanelForTab(tab);
+          const iframe = panel?.querySelector('iframe');
+
+          return {
+            id: getTabId(tab),
+            title: tab.textContent.trim(),
+            url:
+              iframe?.dataset.reportedChatUrl ||
+              iframe?.dataset.currentUrl ||
+              iframe?.src ||
+              SessionState.DEFAULT_CHAT_URL,
+          };
+        });
+
+        const activeTab = getTabs().find((tab) => tab.getAttribute('aria-selected') === 'true');
+        const session = {
+          activeTabId: activeTab ? getTabId(activeTab) : tabs[0]?.id || 1,
+          nextChatId,
+          tabs,
+        };
+
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+      }
+
+      function createChatTab(tabState) {
+        const tab = document.createElement('button');
+        tab.className = 'tab';
+        tab.id = `tab-chat-${tabState.id}`;
+        tab.type = 'button';
+        tab.dataset.chatId = String(tabState.id);
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', 'false');
+        tab.setAttribute('aria-controls', `panel-chat-${tabState.id}`);
+        tab.textContent = tabState.title;
+
+        const panel = document.createElement('section');
+        panel.className = 'panel';
+        panel.id = `panel-chat-${tabState.id}`;
+        panel.setAttribute('role', 'tabpanel');
+        panel.hidden = true;
+        panel.setAttribute('aria-labelledby', tab.id);
+        panel.append(createChatIframe(tabState.url, tabState.title));
+
+        tabList.insertBefore(tab, addTabButton);
+        main.append(panel);
+
+        return tab;
+      }
+
+      function restoreSession() {
+        const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+        const parsed = stored ? JSON.parse(stored) : null;
+        const session = SessionState.sanitizeStoredTabState(parsed);
+
+        nextChatId = session.nextChatId;
+
+        getTabs().forEach((tab) => tab.remove());
+        getPanels().forEach((panel) => panel.remove());
+
+        const restoredTabs = session.tabs.map((tabState) => createChatTab(tabState));
+        const activeTab =
+          restoredTabs.find((tab) => getTabId(tab) === session.activeTabId) || restoredTabs[0];
+
+        if (activeTab) {
+          activateTab(activeTab);
+        }
+
+        persistSession();
       }
 
       function activateTab(tab) {
@@ -182,32 +324,54 @@
         });
 
         tab.focus();
+        persistSession();
       }
 
-      function addChatTab() {
+      function addChatTab(url = SessionState.DEFAULT_CHAT_URL) {
         const chatId = nextChatId;
         nextChatId += 1;
-
-        const tab = document.createElement('button');
-        tab.className = 'tab';
-        tab.id = `tab-chat-${chatId}`;
-        tab.type = 'button';
-        tab.setAttribute('role', 'tab');
-        tab.setAttribute('aria-selected', 'false');
-        tab.setAttribute('aria-controls', `panel-chat-${chatId}`);
-        tab.textContent = `Chat ${chatId}`;
-
-        const panel = document.createElement('section');
-        panel.className = 'panel';
-        panel.id = `panel-chat-${chatId}`;
-        panel.setAttribute('role', 'tabpanel');
-        panel.hidden = true;
-        panel.setAttribute('aria-labelledby', tab.id);
-        panel.innerHTML = '<iframe frameborder="0" src="https://chatgpt.com" allow="camera; clipboard-write; fullscreen; microphone; geolocation" title="ChatGPT home"></iframe>';
-
-        tabList.insertBefore(tab, addTabButton);
-        main.append(panel);
+        const tab = createChatTab(SessionState.createTabState(chatId, `Chat ${chatId}`, url));
         activateTab(tab);
+      }
+
+      function closeTab(tab) {
+        const tabs = getTabs();
+
+        if (tabs.length <= 1) {
+          return;
+        }
+
+        const tabIndex = tabs.indexOf(tab);
+        const wasActive = tab.getAttribute('aria-selected') === 'true';
+        const panel = document.getElementById(tab.getAttribute('aria-controls'));
+        const nextTab = tabs[tabIndex + 1] || tabs[tabIndex - 1];
+
+        tab.remove();
+        panel?.remove();
+
+        if (wasActive && nextTab) {
+          activateTab(nextTab);
+          return;
+        }
+
+        persistSession();
+      }
+
+      function updatePanelUrlFromMessage(sourceWindow, url) {
+        if (!url) {
+          return;
+        }
+
+        const matchingIframe = getPanels()
+          .map((panel) => panel.querySelector('iframe'))
+          .find((iframe) => iframe && iframe.contentWindow === sourceWindow);
+
+        if (!matchingIframe) {
+          return;
+        }
+
+        matchingIframe.dataset.reportedChatUrl = SessionState.normalizeTabUrl(url);
+        persistSession();
       }
 
       tabList.addEventListener('click', (event) => {
@@ -220,7 +384,22 @@
 
         if (event.target.closest('.add-tab')) {
           addChatTab();
+          return;
         }
+
+        if (event.target.closest('.open-tab')) {
+          openActiveFrameInBrowserTab();
+        }
+      });
+
+      tabList.addEventListener('dblclick', (event) => {
+        const tab = event.target.closest('[role="tab"]');
+
+        if (!tab) {
+          return;
+        }
+
+        closeTab(tab);
       });
 
       tabList.addEventListener('keydown', (event) => {
@@ -242,9 +421,15 @@
         activateTab(tabs[(index + direction + tabs.length) % tabs.length]);
       });
 
-      getTabs().forEach((tab, index) => {
-        tab.tabIndex = index === 0 ? 0 : -1;
+      window.addEventListener('message', (event) => {
+        if (event.data?.source !== 'chatgpt-multitab' || event.data?.type !== 'chatgpt-location') {
+          return;
+        }
+
+        updatePanelUrlFromMessage(event.source, event.data.url);
       });
+
+      restoreSession();
     </script>
   </body>
 </html>
