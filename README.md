@@ -4,6 +4,8 @@
 
 The extension is built for unpacked local use. It is not packaged for the Chrome Web Store.
 
+![ChatGPT Multitab screenshot](docs/Screen1.png)
+
 ## What it does
 
 - Adds a built-in `chatgpt.com` iframe rule for the workspace.
