@@ -10,11 +10,23 @@
   "host_permissions": [
     "<all_urls>"
   ],
+  "icons": {
+    "16": "favicon.svg",
+    "32": "favicon.svg",
+    "48": "favicon.svg",
+    "128": "favicon.svg"
+  },
   "background": {
     "service_worker": "src/background.js"
   },
   "options_page": "options.html",
   "action": {
+    "default_icon": {
+      "16": "favicon.svg",
+      "32": "favicon.svg",
+      "48": "favicon.svg",
+      "128": "favicon.svg"
+    },
     "default_popup": "options.html",
     "default_title": "ChatGPT Multitab System"
   }
