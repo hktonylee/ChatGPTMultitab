@@ -20,7 +20,7 @@ Behind the scenes, the extension removes frame-blocking headers only for exact w
 
 ## Requirements
 
-- Google Chrome or another Chromium browser that supports Manifest V3 extensions
+- Google Chrome, Microsoft Edge, or another Chromium browser that supports Manifest V3 extensions
 - Developer mode enabled in `chrome://extensions`
 
 ## Install on your machine
