@@ -48,6 +48,13 @@ label {
   font-weight: 700;
 }
 
+.security-note {
+  color: #9f1239;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
 .entry-row {
   display: flex;
   gap: 8px;
