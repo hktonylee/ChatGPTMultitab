@@ -55,14 +55,20 @@ async function getWhitelistedTabIds(patterns, extensionChrome = chrome) {
     .map((tab) => tab.id);
 }
 
-async function refreshChatGptSessionRules(patterns, extensionChrome = chrome) {
-  const cookieHeaderValue = await getChatGptCookieHeader(extensionChrome);
+async function refreshSessionRules(patterns, extensionChrome = chrome) {
   const tabIds = await getWhitelistedTabIds(patterns, extensionChrome);
   const existingRules = await extensionChrome.declarativeNetRequest.getSessionRules();
   const removeRuleIds = existingRules.map((rule) => rule.id);
-  const addRules = tabIds.length > 0
-    ? [XfoRuleBuilder.buildChatGptIframeRequestHeaderRule(cookieHeaderValue, tabIds)]
-    : [];
+  const addRules = [];
+
+  if (tabIds.length > 0) {
+    const cookieHeaderValue = await getChatGptCookieHeader(extensionChrome);
+
+    addRules.push(
+      ...XfoRuleBuilder.buildHeaderRemovalRules(patterns, tabIds),
+      XfoRuleBuilder.buildChatGptIframeRequestHeaderRule(cookieHeaderValue, tabIds),
+    );
+  }
 
   await extensionChrome.declarativeNetRequest.updateSessionRules({
     addRules,
@@ -74,18 +80,15 @@ async function refreshChatGptSessionRules(patterns, extensionChrome = chrome) {
 
 async function refreshRules(extensionChrome = chrome) {
   const patterns = await getStoredPatterns(extensionChrome);
-  const addRules = XfoRuleBuilder.buildHeaderRemovalRules(patterns);
   const existingRules = await extensionChrome.declarativeNetRequest.getDynamicRules();
   const removeRuleIds = existingRules.map((rule) => rule.id);
 
   await extensionChrome.declarativeNetRequest.updateDynamicRules({
-    addRules,
+    addRules: [],
     removeRuleIds,
   });
 
-  const sessionRuleCount = await refreshChatGptSessionRules(patterns, extensionChrome);
-
-  return addRules.length + sessionRuleCount;
+  return refreshSessionRules(patterns, extensionChrome);
 }
 
 async function handleActionClick(extensionChrome = chrome) {
@@ -162,7 +165,7 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     getWhitelistedTabIds,
     handleActionClick,
-    refreshChatGptSessionRules,
     refreshRules,
+    refreshSessionRules,
   };
 }

@@ -25,8 +25,12 @@ test("normalizes patterns by trimming blanks and removing duplicates", () => {
   );
 });
 
-test("builds dynamic rules that remove frame option response headers", () => {
-  assert.deepEqual(buildHeaderRemovalRules(["http://localhost:8080/?tab=1"]), [
+test("does not build header removal rules without whitelisted tab ids", () => {
+  assert.deepEqual(buildHeaderRemovalRules(["http://localhost:8080/?tab=1"]), []);
+});
+
+test("builds header removal rules limited to whitelisted tab ids", () => {
+  assert.deepEqual(buildHeaderRemovalRules(["http://localhost:8080/?tab=1"], [7]), [
     {
       id: 100,
       priority: 1,
@@ -40,6 +44,7 @@ test("builds dynamic rules that remove frame option response headers", () => {
       condition: {
         regexFilter: "^http://localhost:8080/\\?tab=1$",
         resourceTypes: ["main_frame", "sub_frame"],
+        tabIds: [7],
       },
     },
   ]);
@@ -126,11 +131,8 @@ test("serializes chatgpt cookies into a request header value", () => {
   assert.equal(buildChatGptCookieHeader([]), "");
 });
 
-test("builds only configured response header rules as dynamic rules", () => {
-  assert.deepEqual(
-    buildDynamicRules(["https://chatgpt.com/*"]).map((rule) => rule.id),
-    [100],
-  );
+test("does not build dynamic rules", () => {
+  assert.deepEqual(buildDynamicRules(["https://chatgpt.com/*"]), []);
 });
 
 test("matches urls against stored patterns exactly", () => {

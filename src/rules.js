@@ -104,7 +104,11 @@
     return normalizedUrl === normalizedPattern;
   }
 
-  function buildHeaderRemovalRules(patterns) {
+  function buildHeaderRemovalRules(patterns, tabIds = []) {
+    if (tabIds.length === 0) {
+      return [];
+    }
+
     return normalizePatterns(patterns).map((pattern, index) => ({
       id: USER_RULE_ID_START + index,
       priority: 1,
@@ -115,6 +119,7 @@
       condition: {
         regexFilter: buildExactUrlRegex(pattern),
         resourceTypes: ["main_frame", "sub_frame"],
+        tabIds: [...tabIds],
       },
     }));
   }
@@ -154,8 +159,8 @@
     };
   }
 
-  function buildDynamicRules(patterns) {
-    return buildHeaderRemovalRules(patterns);
+  function buildDynamicRules() {
+    return [];
   }
 
   const api = {

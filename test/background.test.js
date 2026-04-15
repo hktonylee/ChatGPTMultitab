@@ -77,7 +77,7 @@ test("finds only tabs whose top-level url exactly matches the whitelist", async 
   assert.deepEqual(await getWhitelistedTabIds(["http://localhost:8080/"], chrome), [3]);
 });
 
-test("installs chatgpt cookie rewrite as a session rule only for whitelisted tabs", async () => {
+test("installs every rewrite as session rules only for whitelisted tabs", async () => {
   const calls = [];
   const chrome = {
     storage: {
@@ -127,6 +127,13 @@ test("installs chatgpt cookie rewrite as a session rule only for whitelisted tab
     [
       "updateDynamicRules",
       {
+        addRules: [],
+        removeRuleIds: [100],
+      },
+    ],
+    [
+      "updateSessionRules",
+      {
         addRules: [
           {
             id: 100,
@@ -141,16 +148,9 @@ test("installs chatgpt cookie rewrite as a session rule only for whitelisted tab
             condition: {
               regexFilter: "^http://localhost:8080/$",
               resourceTypes: ["main_frame", "sub_frame"],
+              tabIds: [11],
             },
           },
-        ],
-        removeRuleIds: [100],
-      },
-    ],
-    [
-      "updateSessionRules",
-      {
-        addRules: [
           {
             id: 1,
             priority: 2,
@@ -182,5 +182,50 @@ test("installs chatgpt cookie rewrite as a session rule only for whitelisted tab
         removeRuleIds: [1],
       },
     ],
+  ]);
+});
+
+test("clears every rewrite when no top-level tab matches the whitelist", async () => {
+  const calls = [];
+  const chrome = {
+    storage: {
+      local: {
+        async get(defaults) {
+          return { ...defaults, urlPatterns: ["http://localhost:8080/"] };
+        },
+      },
+    },
+    cookies: {
+      async getAll() {
+        return [{ name: "session", value: "abc" }];
+      },
+    },
+    tabs: {
+      async query() {
+        return [{ id: 12, url: "https://untrusted.example/" }];
+      },
+    },
+    declarativeNetRequest: {
+      async getDynamicRules() {
+        return [{ id: 100 }];
+      },
+      async updateDynamicRules(details) {
+        calls.push(["updateDynamicRules", details]);
+      },
+      async getSessionRules() {
+        return [{ id: 1 }, { id: 100 }];
+      },
+      async updateSessionRules(details) {
+        calls.push(["updateSessionRules", details]);
+      },
+    },
+  };
+
+  const ruleCount = await refreshRules(chrome);
+
+  assert.equal(ruleCount, 0);
+  assert.deepEqual(calls, [
+    ["updateDynamicRules", { addRules: [], removeRuleIds: [100] }],
+    ["updateSessionRules", { addRules: [], removeRuleIds: [1, 100] }],
   ]);
 });
