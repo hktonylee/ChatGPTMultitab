@@ -34,13 +34,14 @@ Behind the scenes, the extension removes frame-blocking headers only for exact w
 
 If you want to use `file://` URLs, also enable **Allow access to file URLs** in the extension details page.
 
-## Configure it
+## How to use it
 
-1. Open the extension popup or the extension options page.
-2. Add one or more exact URLs.
-3. Save them. The extension refreshes its dynamic rules immediately.
+1. Open the extension popup or options page.
+2. Add the exact URL for your ChatGPT multitab workspace.
+3. Save it.
+4. Open the workspace and use ChatGPT in multiple tabs.
 
-Examples:
+Example URLs:
 
 ```text
 http://localhost:8080/
@@ -48,23 +49,7 @@ http://127.0.0.1:5173/some/path/
 file:///Users/you/example.html
 ```
 
-Important behavior:
-
-- Matching is exact URL matching, not wildcard matching.
-- `https://example.com/page` and `https://example.com/page/` are different URLs.
-- Invalid or duplicate entries are normalized before rules are installed.
-- Clicking the extension icon opens the config page when the active tab is already whitelisted. Otherwise it opens the primary URL when one is configured.
-
-## How to use it
-
-After loading the extension:
-
-1. Open the extension UI.
-2. Add the exact local or trusted page URLs you want to allow in your workflow.
-3. Open your ChatGPT multitab workspace.
-4. Load the configured page or ChatGPT page inside the framed workflow.
-
-The extension is inactive on non-whitelisted top-level pages: no frame-option header rewrite, no ChatGPT CSP rewrite, and no ChatGPT cookie rewrite.
+URLs must match exactly. For example, `https://example.com/page` and `https://example.com/page/` are different URLs.
 
 ## Security notes
 
