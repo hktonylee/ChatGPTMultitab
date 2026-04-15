@@ -11,6 +11,7 @@ The extension is built for unpacked local use. It is not packaged for the Chrome
 - Adds a built-in `chatgpt.com` iframe rule for the workspace.
 - Mirrors current `chatgpt.com` cookies into matching iframe requests.
 - Refreshes those rules when ChatGPT cookies change.
+- Keeps one hidden ChatGPT tab preloaded so opening a new workspace tab is faster.
 - Lets you add exact URLs that should have frame-blocking headers removed.
 - Persists your configured URLs in Chrome extension storage.
 
