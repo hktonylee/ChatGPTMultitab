@@ -66,6 +66,7 @@ Important behavior:
 - Matching is exact URL matching, not wildcard matching.
 - `https://example.com/page` and `https://example.com/page/` are different URLs.
 - Invalid or duplicate entries are normalized before rules are installed.
+- Clicking the extension icon opens the config page when the active tab is already whitelisted. Otherwise it opens the primary URL when one is configured.
 
 ## How to use it
 
