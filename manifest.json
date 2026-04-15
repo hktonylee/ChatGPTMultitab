@@ -27,6 +27,7 @@
         "https://chatgpt.com/*"
       ],
       "js": [
+        "src/keyboard-shortcuts.js",
         "src/chatgpt-url.js",
         "src/chatgpt-location.js"
       ],

@@ -70,6 +70,29 @@ function installDomObserver() {
   });
 }
 
+function postWorkspaceShortcutToParent(event) {
+  if (window.parent === window) {
+    return;
+  }
+
+  const action = KeyboardShortcuts.getWorkspaceShortcutAction(event);
+
+  if (!action) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  window.parent.postMessage(
+    {
+      source: "chatgpt-multitab",
+      type: "workspace-shortcut",
+      action,
+    },
+    "*",
+  );
+}
+
 installHistoryReporter();
 installDomObserver();
 
@@ -78,5 +101,6 @@ window.addEventListener("popstate", scheduleLocationReport);
 window.addEventListener("load", scheduleLocationReport);
 window.addEventListener("pageshow", scheduleLocationReport);
 document.addEventListener("visibilitychange", scheduleLocationReport);
+document.addEventListener("keydown", postWorkspaceShortcutToParent);
 
 scheduleLocationReport();

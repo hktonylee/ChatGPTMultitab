@@ -50,3 +50,17 @@ test("workspace closes tabs on middle click", () => {
   assert.match(html, /event\.preventDefault\(\);/);
   assert.match(html, /closeTab\(tab\);/);
 });
+
+test("workspace handles keyboard shortcuts for creating and switching tabs", () => {
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  const shortcutSource = fs.readFileSync(
+    path.join(__dirname, "..", "src", "keyboard-shortcuts.js"),
+    "utf8",
+  );
+
+  assert.equal(html.includes(shortcutSource), true);
+  assert.match(html, /function activateRelativeTab\(direction\)/);
+  assert.match(html, /function handleWorkspaceShortcut\(action\)/);
+  assert.match(html, /document\.addEventListener\('keydown', handleWorkspaceKeydown\);/);
+  assert.match(html, /handleWorkspaceShortcut\(event\.data\.action\);/);
+});

@@ -278,6 +278,35 @@
 })(typeof globalThis !== "undefined" ? globalThis : this);
     </script>
     <script>
+(function attachKeyboardShortcuts(root) {
+  function getWorkspaceShortcutAction(event) {
+    if (!event || event.altKey || !(event.ctrlKey || event.metaKey)) {
+      return "";
+    }
+
+    if (String(event.key || "").toLowerCase() === "t") {
+      return "new-tab";
+    }
+
+    if (event.key === "Tab") {
+      return event.shiftKey ? "previous-tab" : "next-tab";
+    }
+
+    return "";
+  }
+
+  const api = {
+    getWorkspaceShortcutAction,
+  };
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = api;
+  }
+
+  root.KeyboardShortcuts = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+    </script>
+    <script>
       const SESSION_STORAGE_KEY = 'chatgpt-multitab-session';
       const tabList = document.querySelector('[role="tablist"]');
       const addTabButton = document.querySelector('.add-tab');
@@ -474,6 +503,18 @@
         persistSession();
       }
 
+      function activateRelativeTab(direction) {
+        const tabs = getTabs();
+
+        if (tabs.length === 0) {
+          return;
+        }
+
+        const activeTab = tabs.find((tab) => tab.getAttribute('aria-selected') === 'true') || tabs[0];
+        const activeIndex = tabs.indexOf(activeTab);
+        activateTab(tabs[(activeIndex + direction + tabs.length) % tabs.length]);
+      }
+
       function addChatTab(url = SessionState.DEFAULT_CHAT_URL) {
         if (url === SessionState.DEFAULT_CHAT_URL) {
           const tab = promoteCachedChatTab();
@@ -509,6 +550,37 @@
         }
 
         persistSession();
+      }
+
+      function handleWorkspaceShortcut(action) {
+        if (action === 'new-tab') {
+          addChatTab();
+          return true;
+        }
+
+        if (action === 'next-tab') {
+          activateRelativeTab(1);
+          return true;
+        }
+
+        if (action === 'previous-tab') {
+          activateRelativeTab(-1);
+          return true;
+        }
+
+        return false;
+      }
+
+      function handleWorkspaceKeydown(event) {
+        const action = KeyboardShortcuts.getWorkspaceShortcutAction(event);
+
+        if (!action) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        handleWorkspaceShortcut(action);
       }
 
       function updatePanelUrlFromMessage(sourceWindow, url) {
@@ -622,12 +694,21 @@
       });
 
       window.addEventListener('message', (event) => {
-        if (event.data?.source !== 'chatgpt-multitab' || event.data?.type !== 'chatgpt-location') {
+        if (event.data?.source !== 'chatgpt-multitab') {
           return;
         }
 
-        handleFrameReport(event.source, event.data.url, event.data.title);
+        if (event.data.type === 'chatgpt-location') {
+          handleFrameReport(event.source, event.data.url, event.data.title);
+          return;
+        }
+
+        if (event.data.type === 'workspace-shortcut') {
+          handleWorkspaceShortcut(event.data.action);
+        }
       });
+
+      document.addEventListener('keydown', handleWorkspaceKeydown);
 
       window.addEventListener('beforeunload', (event) => {
         if (!shouldConfirmPageClose()) {
