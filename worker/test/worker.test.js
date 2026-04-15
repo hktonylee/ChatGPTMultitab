@@ -5,7 +5,7 @@ const path = require("node:path");
 
 test("cloudflare worker response returns index html", async () => {
   const { createWorker } = await import("../src/worker-response.mjs");
-  const indexHtml = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  const indexHtml = fs.readFileSync(path.join(__dirname, "..", "..", "index.html"), "utf8");
   const worker = createWorker(indexHtml);
 
   const response = await worker.fetch(new Request("https://example.com/anything"));
