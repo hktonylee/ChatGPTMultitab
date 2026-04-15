@@ -2,12 +2,13 @@
 
 ## Goal
 
-Change the browser action so clicking the extension icon opens the whitelist management page, and add a `Set as primary` control to whitelisted URLs. Setting a URL as primary should also move it to the top of the whitelist.
+Change the browser action so clicking the extension icon opens the whitelist management page from already-whitelisted pages, or opens the primary URL from other pages. Add a `Set as primary` control to whitelisted URLs. Setting a URL as primary should also move it to the top of the whitelist.
 
 ## Scope
 
 - Remove the action popup behavior from the extension manifest.
-- Open `options.html` in a browser tab when the action icon is clicked.
+- Open `options.html` in a browser tab when the action icon is clicked from a whitelisted page.
+- Open the primary URL when the action icon is clicked from a non-whitelisted page and a primary URL is configured.
 - Persist a primary whitelisted URL in extension storage.
 - Reorder the whitelist so the primary URL is first.
 - Render primary state clearly in the whitelist UI.
@@ -23,7 +24,9 @@ Change the browser action so clicking the extension icon opens the whitelist man
 
 ### Browser action
 
-The extension currently declares `options.html` as a popup. That prevents a normal click handler from running. The manifest will stop declaring a popup, and the background service worker will register `chrome.action.onClicked` to open the extension options page in a tab using the extension URL for `options.html`.
+The extension currently declares `options.html` as a popup. That prevents a normal click handler from running. The manifest will stop declaring a popup, and the background service worker will register `chrome.action.onClicked`.
+
+When the active tab URL exactly matches the whitelist, clicking the action opens the extension options page. When it does not match and a primary URL exists, clicking the action opens the primary URL. When no primary URL exists, clicking the action opens the options page.
 
 ### Storage model
 

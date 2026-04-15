@@ -21,6 +21,14 @@ async function getPrimaryPattern(extensionChrome = chrome) {
   return String(stored[PRIMARY_STORAGE_KEY] || "").trim();
 }
 
+async function isWhitelistedUrl(url, extensionChrome = chrome) {
+  const patterns = await getStoredPatterns(extensionChrome);
+
+  return XfoRuleBuilder.normalizePatterns(patterns).some((pattern) => (
+    XfoRuleBuilder.doesUrlMatchPattern(url, pattern)
+  ));
+}
+
 async function clearDynamicRules(extensionChrome = chrome) {
   const existingRules = await extensionChrome.declarativeNetRequest.getDynamicRules();
   const removeRuleIds = existingRules.map((rule) => rule.id);
@@ -91,7 +99,12 @@ async function refreshRules(extensionChrome = chrome) {
   return refreshSessionRules(patterns, extensionChrome);
 }
 
-async function handleActionClick(extensionChrome = chrome) {
+async function handleActionClick(extensionChrome = chrome, activeTab = {}) {
+  if (await isWhitelistedUrl(activeTab.url, extensionChrome)) {
+    await extensionChrome.runtime.openOptionsPage();
+    return;
+  }
+
   const primaryPattern = await getPrimaryPattern(extensionChrome);
 
   if (primaryPattern) {
@@ -115,8 +128,8 @@ if (typeof chrome !== "undefined" && chrome.runtime) {
     });
   });
 
-  chrome.action.onClicked.addListener(() => {
-    handleActionClick().catch((error) => {
+  chrome.action.onClicked.addListener((tab) => {
+    handleActionClick(chrome, tab).catch((error) => {
       console.error("Failed to open the primary page", error);
     });
   });
@@ -165,6 +178,7 @@ if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     getWhitelistedTabIds,
     handleActionClick,
+    isWhitelistedUrl,
     refreshRules,
     refreshSessionRules,
   };
