@@ -105,6 +105,16 @@ test("builds a chatgpt.com iframe access rule with an injected cookie header", (
   );
 });
 
+test("builds a chatgpt.com iframe access rule limited to whitelisted tab ids", () => {
+  const rule = buildChatGptIframeRequestHeaderRule("a=1", [7, 9]);
+
+  assert.deepEqual(rule.condition, {
+    urlFilter: "||chatgpt.com/",
+    resourceTypes: ["sub_frame", "image", "xmlhttprequest", "media"],
+    tabIds: [7, 9],
+  });
+});
+
 test("serializes chatgpt cookies into a request header value", () => {
   assert.equal(
     buildChatGptCookieHeader([
@@ -116,10 +126,10 @@ test("serializes chatgpt cookies into a request header value", () => {
   assert.equal(buildChatGptCookieHeader([]), "");
 });
 
-test("combines chatgpt iframe request cleanup with configured response header rules", () => {
+test("builds only configured response header rules as dynamic rules", () => {
   assert.deepEqual(
     buildDynamicRules(["https://chatgpt.com/*"]).map((rule) => rule.id),
-    [1, 100],
+    [100],
   );
 });
 

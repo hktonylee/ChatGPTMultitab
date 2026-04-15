@@ -12,7 +12,7 @@ In scope:
 - User-configurable exact URL list.
 - Persistent URL storage using Chrome extension storage.
 - Dynamic `declarativeNetRequest` rules that remove `X-Frame-Options`.
-- Built-in `chatgpt.com` iframe access rule for the extension workspace that removes frame option headers and frame-blocking CSP headers.
+- Built-in `chatgpt.com` iframe access rule for whitelisted top-level tabs that removes frame option headers and frame-blocking CSP headers.
 - Documentation for loading and configuring the unpacked extension.
 
 Out of scope:
@@ -20,13 +20,13 @@ Out of scope:
 - Publishing to the Chrome Web Store.
 - Syncing settings across browsers.
 - Bypassing CSP `frame-ancestors` for arbitrary user-configured URLs; the built-in CSP removal is limited to `chatgpt.com` sub-frame navigations.
-- Broad default behavior outside the extension workspace's `chatgpt.com` iframe.
+- Broad default behavior outside whitelisted top-level pages.
 
 ## Architecture
 
 - `manifest.json` declares a Manifest V3 extension with an options page, background service worker, storage permission, `declarativeNetRequestWithHostAccess`, and broad host permissions so user-entered URLs can work.
 - `src/rules.js` owns pure rule construction. It normalizes user URLs, assigns stable rule IDs, builds a built-in `chatgpt.com` iframe access rule, and builds dynamic rules that remove frame option headers.
-- `src/background.js` reads saved URLs, installs dynamic DNR rules at startup/install, and exposes a message handler so the options page can refresh rules immediately after saving.
+- `src/background.js` reads saved URLs, installs dynamic DNR rules at startup/install, installs tab-scoped session DNR rules for ChatGPT iframe access, and exposes a message handler so the options page can refresh rules immediately after saving.
 - `options.html` and `src/options.js` provide a small settings UI for adding, opening, and removing URLs.
 - `test/rules.test.js` verifies rule construction without depending on Chrome APIs.
 
@@ -37,8 +37,9 @@ Out of scope:
 3. Options page saves URLs to `chrome.storage.local`.
 4. Options page sends a message to the background worker to refresh rules.
 5. Background worker converts URLs into dynamic DNR rules.
-6. Chrome removes `X-Frame-Options` and `Frame-Options` response headers for matching responses and for `chatgpt.com` sub-frame navigations.
-7. Chrome also removes `Content-Security-Policy` and `Content-Security-Policy-Report-Only` for built-in `chatgpt.com` sub-frame navigations so `frame-ancestors` cannot block the extension workspace.
+6. Chrome removes `X-Frame-Options` and `Frame-Options` response headers for matching saved URL responses.
+7. The background worker finds tabs whose top-level URL exactly matches the saved URL list.
+8. Chrome applies ChatGPT iframe access, including cookie header injection and CSP removal, only in those whitelisted tabs.
 
 ## Error Handling
 
@@ -53,7 +54,7 @@ Out of scope:
 - Patterns persist across browser restarts.
 - Saving URLs refreshes dynamic rules without reloading the extension.
 - Matching responses have `X-Frame-Options` removed.
-- Built-in `chatgpt.com` sub-frame responses have frame option headers and CSP headers removed.
+- Built-in `chatgpt.com` sub-frame responses have frame option headers and CSP headers removed only in whitelisted tabs.
 - Non-matching responses are untouched.
 - Rule-building behavior is covered by automated tests.
 
