@@ -277,6 +277,10 @@
         return [...document.querySelectorAll('[role="tab"]')];
       }
 
+      function shouldConfirmPageClose() {
+        return getTabs().length > 1;
+      }
+
       function getPanels() {
         return [...document.querySelectorAll('[role="tabpanel"]')];
       }
@@ -552,6 +556,15 @@
         }
 
         handleFrameReport(event.source, event.data.url, event.data.title);
+      });
+
+      window.addEventListener('beforeunload', (event) => {
+        if (!shouldConfirmPageClose()) {
+          return;
+        }
+
+        event.preventDefault();
+        event.returnValue = '';
       });
 
       restoreSession();
