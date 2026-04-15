@@ -19,3 +19,9 @@ test("workspace page asks before closing when multiple chat tabs are open", () =
   assert.match(html, /event\.preventDefault\(\);/);
   assert.match(html, /event\.returnValue = '';/);
 });
+
+test("open-chat-in-browser-tab control is pinned to the right edge of the tab bar", () => {
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+
+  assert.match(html, /\.open-tab\s*\{[^}]*margin-left:\s*auto;/s);
+});
