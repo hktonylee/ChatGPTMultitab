@@ -41,3 +41,12 @@ test("workspace keeps one preloaded chat tab ready in the background", () => {
   assert.match(html, /const tab = promoteCachedChatTab\(\);/);
   assert.match(html, /ensureCachedChatTab\(\);/);
 });
+
+test("workspace closes tabs on middle click", () => {
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+
+  assert.match(html, /tabList\.addEventListener\('auxclick'/);
+  assert.match(html, /event\.button !== 1/);
+  assert.match(html, /event\.preventDefault\(\);/);
+  assert.match(html, /closeTab\(tab\);/);
+});

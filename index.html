@@ -581,6 +581,17 @@
         }
       });
 
+      tabList.addEventListener('auxclick', (event) => {
+        const tab = event.target.closest('[role="tab"]');
+
+        if (!tab || event.button !== 1) {
+          return;
+        }
+
+        event.preventDefault();
+        closeTab(tab);
+      });
+
       tabList.addEventListener('dblclick', (event) => {
         const tab = event.target.closest('[role="tab"]');
 
