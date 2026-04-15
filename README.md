@@ -10,12 +10,12 @@ The extension is built for unpacked local use. It is not packaged for the Chrome
 
 - Adds a built-in `chatgpt.com` iframe rule for the workspace.
 - Mirrors current `chatgpt.com` cookies into matching iframe requests only from whitelisted top-level pages.
-- Refreshes those rules when ChatGPT cookies change.
+- Refreshes those session rules when tabs or ChatGPT cookies change.
 - Keeps one hidden ChatGPT tab preloaded so opening a new workspace tab is faster.
 - Lets you add exact URLs that should have frame-blocking headers removed.
 - Persists your configured URLs in Chrome extension storage.
 
-For configured URLs, the extension removes these response headers when the URL matches exactly:
+For configured URLs, the extension removes these response headers when the URL matches exactly and the browser tab's top-level URL is also on the whitelist:
 
 - `X-Frame-Options`
 - `Frame-Options`
@@ -76,7 +76,7 @@ After loading the extension:
 3. Open your ChatGPT multitab workspace.
 4. Load the configured page or ChatGPT page inside the framed workflow.
 
-The extension removes frame-option headers only for your saved exact URLs. ChatGPT iframe access, including cookie header injection, is applied only in browser tabs whose top-level URL exactly matches one of those saved URLs.
+The extension is inactive on non-whitelisted top-level pages: no frame-option header rewrite, no ChatGPT CSP rewrite, and no ChatGPT cookie rewrite.
 
 ## Security notes
 
@@ -89,7 +89,7 @@ The extension removes frame-option headers only for your saved exact URLs. ChatG
 
 - `manifest.json`: Chrome extension manifest
 - `options.html`: settings UI
-- `src/background.js`: installs and refreshes dynamic rules
+- `src/background.js`: installs and refreshes tab-scoped session rules
 - `src/rules.js`: rule generation and URL normalization
 - `src/options.js`: options page behavior
 - `src/session-state.js`: multitab session state helpers
