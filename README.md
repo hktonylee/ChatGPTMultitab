@@ -9,7 +9,7 @@ The extension is built for unpacked local use. It is not packaged for the Chrome
 ## What it does
 
 - Adds a built-in `chatgpt.com` iframe rule for the workspace.
-- Mirrors current `chatgpt.com` cookies into matching iframe requests.
+- Mirrors current `chatgpt.com` cookies into matching iframe requests only from whitelisted top-level pages.
 - Refreshes those rules when ChatGPT cookies change.
 - Keeps one hidden ChatGPT tab preloaded so opening a new workspace tab is faster.
 - Lets you add exact URLs that should have frame-blocking headers removed.
@@ -76,12 +76,12 @@ After loading the extension:
 3. Open your ChatGPT multitab workspace.
 4. Load the configured page or ChatGPT page inside the framed workflow.
 
-The extension only changes requests that match the built-in ChatGPT rule or your saved exact URLs. Other pages are left alone.
+The extension removes frame-option headers only for your saved exact URLs. ChatGPT iframe access, including cookie header injection, is applied only in browser tabs whose top-level URL exactly matches one of those saved URLs.
 
 ## Security notes
 
 - The extension requests `<all_urls>` host permissions so it can apply user-entered rules.
-- It reads ChatGPT cookies and injects them into the built-in ChatGPT iframe request rule.
+- It reads ChatGPT cookies and injects them only into tab-scoped ChatGPT iframe requests from whitelisted top-level pages.
 - It is meant for trusted local use, not general browsing.
 - Do not add untrusted URLs just to force them into a frame.
 

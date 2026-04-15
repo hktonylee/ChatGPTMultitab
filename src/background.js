@@ -11,8 +11,8 @@ const PRIMARY_STORAGE_KEY = "primaryUrl";
 const CHATGPT_COOKIE_URL = "https://chatgpt.com/";
 const CHATGPT_COOKIE_DOMAIN = "chatgpt.com";
 
-async function getStoredPatterns() {
-  const stored = await chrome.storage.local.get({ [STORAGE_KEY]: [] });
+async function getStoredPatterns(extensionChrome = chrome) {
+  const stored = await extensionChrome.storage.local.get({ [STORAGE_KEY]: [] });
   return stored[STORAGE_KEY];
 }
 
@@ -21,41 +21,71 @@ async function getPrimaryPattern(extensionChrome = chrome) {
   return String(stored[PRIMARY_STORAGE_KEY] || "").trim();
 }
 
-async function clearDynamicRules() {
-  const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+async function clearDynamicRules(extensionChrome = chrome) {
+  const existingRules = await extensionChrome.declarativeNetRequest.getDynamicRules();
   const removeRuleIds = existingRules.map((rule) => rule.id);
 
   if (removeRuleIds.length === 0) {
     return;
   }
 
-  await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds });
+  await extensionChrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds });
 }
 
-async function getChatGptCookieHeader() {
-  const cookies = await chrome.cookies.getAll({ url: CHATGPT_COOKIE_URL });
+async function getChatGptCookieHeader(extensionChrome = chrome) {
+  const cookies = await extensionChrome.cookies.getAll({ url: CHATGPT_COOKIE_URL });
 
   if (cookies.length > 0) {
     return XfoRuleBuilder.buildChatGptCookieHeader(cookies);
   }
 
-  const domainCookies = await chrome.cookies.getAll({ domain: CHATGPT_COOKIE_DOMAIN });
+  const domainCookies = await extensionChrome.cookies.getAll({ domain: CHATGPT_COOKIE_DOMAIN });
   return XfoRuleBuilder.buildChatGptCookieHeader(domainCookies);
 }
 
-async function refreshRules() {
-  const patterns = await getStoredPatterns();
-  const cookieHeaderValue = await getChatGptCookieHeader();
-  const addRules = XfoRuleBuilder.buildDynamicRules(patterns, cookieHeaderValue);
-  const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-  const removeRuleIds = existingRules.map((rule) => rule.id);
+async function getWhitelistedTabIds(patterns, extensionChrome = chrome) {
+  const tabs = await extensionChrome.tabs.query({});
+  const normalizedPatterns = XfoRuleBuilder.normalizePatterns(patterns);
 
-  await chrome.declarativeNetRequest.updateDynamicRules({
+  return tabs
+    .filter((tab) => Number.isInteger(tab.id))
+    .filter((tab) => normalizedPatterns.some((pattern) => (
+      XfoRuleBuilder.doesUrlMatchPattern(tab.url, pattern)
+    )))
+    .map((tab) => tab.id);
+}
+
+async function refreshChatGptSessionRules(patterns, extensionChrome = chrome) {
+  const cookieHeaderValue = await getChatGptCookieHeader(extensionChrome);
+  const tabIds = await getWhitelistedTabIds(patterns, extensionChrome);
+  const existingRules = await extensionChrome.declarativeNetRequest.getSessionRules();
+  const removeRuleIds = existingRules.map((rule) => rule.id);
+  const addRules = tabIds.length > 0
+    ? [XfoRuleBuilder.buildChatGptIframeRequestHeaderRule(cookieHeaderValue, tabIds)]
+    : [];
+
+  await extensionChrome.declarativeNetRequest.updateSessionRules({
     addRules,
     removeRuleIds,
   });
 
   return addRules.length;
+}
+
+async function refreshRules(extensionChrome = chrome) {
+  const patterns = await getStoredPatterns(extensionChrome);
+  const addRules = XfoRuleBuilder.buildHeaderRemovalRules(patterns);
+  const existingRules = await extensionChrome.declarativeNetRequest.getDynamicRules();
+  const removeRuleIds = existingRules.map((rule) => rule.id);
+
+  await extensionChrome.declarativeNetRequest.updateDynamicRules({
+    addRules,
+    removeRuleIds,
+  });
+
+  const sessionRuleCount = await refreshChatGptSessionRules(patterns, extensionChrome);
+
+  return addRules.length + sessionRuleCount;
 }
 
 async function handleActionClick(extensionChrome = chrome) {
@@ -100,6 +130,18 @@ if (typeof chrome !== "undefined" && chrome.runtime) {
     });
   });
 
+  chrome.tabs.onUpdated.addListener(() => {
+    refreshRules().catch((error) => {
+      console.error("Failed to refresh tab-scoped ChatGPT rules", error);
+    });
+  });
+
+  chrome.tabs.onRemoved.addListener(() => {
+    refreshRules().catch((error) => {
+      console.error("Failed to refresh tab-scoped ChatGPT rules", error);
+    });
+  });
+
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (!message || message.type !== "refreshRules") {
       return false;
@@ -118,6 +160,9 @@ if (typeof chrome !== "undefined" && chrome.runtime) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
+    getWhitelistedTabIds,
     handleActionClick,
+    refreshChatGptSessionRules,
+    refreshRules,
   };
 }
