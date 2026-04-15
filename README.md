@@ -40,6 +40,12 @@ If you want to use `file://` URLs, also enable **Allow access to file URLs** in 
 3. Save it.
 4. Open the workspace and use ChatGPT in multiple tabs.
 
+Keyboard shortcuts:
+
+- `Ctrl+T` or `Cmd+T`: open a new ChatGPT workspace tab.
+- `Ctrl+Tab` or `Cmd+Tab`: switch to the next workspace tab.
+- `Ctrl+Shift+Tab` or `Cmd+Shift+Tab`: switch to the previous workspace tab.
+
 Example URLs:
 
 ```text
