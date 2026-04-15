@@ -3,11 +3,11 @@ const test = require("node:test");
 const fs = require("node:fs");
 const path = require("node:path");
 
-test("workspace page does not fetch session-state.js through a relative script path", () => {
+test("workspace page loads session state from the shared source file", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
-  assert.equal(html.includes('<script src="src/session-state.js"></script>'), false);
-  assert.match(html, /function attachSessionState\(root\)/);
+  assert.match(html, /<script src="src\/session-state\.js"><\/script>\s*<script>/);
+  assert.equal(html.includes("function attachSessionState(root)"), false);
 });
 
 test("workspace page asks before closing when multiple chat tabs are open", () => {
