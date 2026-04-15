@@ -1,0 +1,9 @@
+{
+  "name": "chatgpt-multitab-worker",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "test": "node --test test/*.test.js",
+    "check": "node --check src/worker-response.mjs && node --check src/worker.mjs"
+  }
+}

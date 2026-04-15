@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "node --test test/*.test.js",
-    "check": "node --check src/rules.js && node --check src/background.js && node --check src/options.js && node --check src/session-state.js && node --check src/chatgpt-url.js && node --check src/chatgpt-location.js && node --check src/worker-response.mjs && node --check src/worker.mjs"
+    "test": "node --test test/*.test.js worker/test/*.test.js",
+    "check": "node --check src/rules.js && node --check src/background.js && node --check src/options.js && node --check src/session-state.js && node --check src/chatgpt-url.js && node --check src/chatgpt-location.js && node --check worker/src/worker-response.mjs && node --check worker/src/worker.mjs"
   }
 }

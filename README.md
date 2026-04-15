@@ -117,11 +117,12 @@ npm run check
 
 ## Cloudflare Worker
 
-The Worker entrypoint is `src/worker.mjs`. It imports `index.html` as text through `wrangler.toml` and returns it with a `text/html` response.
+The Worker lives in `worker/`. Its entrypoint is `worker/src/worker.mjs`, and `worker/wrangler.toml` imports the root `index.html` as text and returns it with a `text/html` response.
 
 Deploy with Wrangler:
 
 ```sh
+cd worker
 npx wrangler deploy
 ```
 
