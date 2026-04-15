@@ -4,7 +4,9 @@
 
 The extension is built for unpacked local use. It is not packaged for the Chrome Web Store.
 
-![ChatGPT Multitab screenshot](docs/Screen1.png)
+| Workspace | Configuration |
+| --- | --- |
+| ![ChatGPT Multitab workspace screenshot](docs/Screen1.png) | ![ChatGPT Multitab configuration screenshot](docs/Screen2.png) |
 
 ## What it does
 
