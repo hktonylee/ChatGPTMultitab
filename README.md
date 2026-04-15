@@ -13,7 +13,6 @@ The extension is built for unpacked local use. It is not packaged for the Chrome
 - Lets you use the official ChatGPT web interface in a multitab workspace.
 - Keeps multiple ChatGPT tabs available in one browser page.
 - Uses your existing `chatgpt.com` session so the embedded ChatGPT tabs stay signed in.
-- Lets you whitelist the exact pages that are allowed to load the workspace.
 - Keeps one ChatGPT tab preloaded so opening a new workspace tab is faster.
 
 Behind the scenes, the extension removes frame-blocking headers only for exact whitelisted URLs and the built-in `chatgpt.com` iframe workflow.
@@ -87,6 +86,10 @@ npm run check
 ```
 
 ## Cloudflare Worker
+
+The Cloudflare Worker is optional. You only need it when you want to host the workspace at an HTTPS URL.
+
+Chrome and Edge require an HTTPS path when you use **Install page as app**. Cloudflare Workers are an easy, cheap way to host the workspace with HTTPS.
 
 The Worker lives in `worker/`. Its entrypoint is `worker/src/worker.mjs`, and `worker/wrangler.toml` imports the root `index.html` as text and returns it with a `text/html` response.
 
