@@ -18,12 +18,6 @@ The extension is built for unpacked local use. It is not packaged for the Chrome
 
 Behind the scenes, the extension removes frame-blocking headers only for exact whitelisted URLs and the built-in `chatgpt.com` iframe workflow.
 
-## Who this is for
-
-Use this when you are running a trusted local workflow and need to embed ChatGPT or a specific local page that would otherwise refuse to load in a frame.
-
-This is intentionally broad in host access and should only be installed on a machine you control.
-
 ## Requirements
 
 - Google Chrome or another Chromium browser that supports Manifest V3 extensions
