@@ -121,11 +121,41 @@ npm run check
 
 The Worker lives in `worker/`. Its entrypoint is `worker/src/worker.mjs`, and `worker/wrangler.toml` imports the root `index.html` as text and returns it with a `text/html` response.
 
-Deploy with Wrangler:
+The Worker also serves `favicon-inverted.svg`, so the hosted page does not request a missing favicon from the deployment path.
+
+### Deploy
+
+1. Install or run Wrangler.
+
+   ```sh
+   cd worker
+   npx wrangler --version
+   ```
+
+2. Log in to Cloudflare if this machine is not already authenticated.
+
+   ```sh
+   npx wrangler login
+   ```
+
+3. Preview the Worker locally.
+
+   ```sh
+   npx wrangler dev
+   ```
+
+4. Deploy to Cloudflare Workers.
+
+   ```sh
+   npx wrangler deploy
+   ```
+
+After deployment, copy the Worker URL and add that exact URL to the extension whitelist. If you attach a custom route such as `https://example.com/chat/`, add that exact route to the whitelist instead.
+
+You can also deploy from the repository root with an explicit config path:
 
 ```sh
-cd worker
-npx wrangler deploy
+npx wrangler deploy --config worker/wrangler.toml
 ```
 
 ## Limitations
