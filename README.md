@@ -115,6 +115,16 @@ Run syntax checks:
 npm run check
 ```
 
+## Cloudflare Worker
+
+The Worker entrypoint is `src/worker.mjs`. It imports `index.html` as text through `wrangler.toml` and returns it with a `text/html` response.
+
+Deploy with Wrangler:
+
+```sh
+npx wrangler deploy
+```
+
 ## Limitations
 
 - This repo is currently set up for unpacked local installation.

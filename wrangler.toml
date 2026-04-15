@@ -1,0 +1,7 @@
+name = "chatgpt-multitab-system"
+main = "src/worker.mjs"
+compatibility_date = "2026-04-15"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
