@@ -54,6 +54,7 @@ URLs must match exactly. For example, `https://example.com/page` and `https://ex
 
 - The extension requests `<all_urls>` host permissions so it can apply user-entered rules.
 - It reads ChatGPT cookies and injects them only into tab-scoped ChatGPT iframe requests from whitelisted top-level pages.
+- The optional Cloudflare Worker serves the workspace with `frame-ancestors 'none'` and `X-Frame-Options: DENY` so third-party sites cannot iframe the hosted whitelist URL.
 - Do not whitelist untrusted URLs.
 
 ## Project layout

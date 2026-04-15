@@ -1,11 +1,14 @@
 const HTML_CONTENT_TYPE = "text/html; charset=utf-8";
 const SVG_CONTENT_TYPE = "image/svg+xml; charset=utf-8";
+const HTML_FRAME_ANCESTORS = "frame-ancestors 'none'";
 
 export function buildIndexResponse(indexHtml) {
   return new Response(indexHtml, {
     headers: {
       "content-type": HTML_CONTENT_TYPE,
       "cache-control": "no-store",
+      "content-security-policy": HTML_FRAME_ANCESTORS,
+      "x-frame-options": "DENY",
     },
   });
 }

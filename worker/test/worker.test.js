@@ -13,6 +13,8 @@ test("cloudflare worker response returns index html", async () => {
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-type"), "text/html; charset=utf-8");
   assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(response.headers.get("content-security-policy"), "frame-ancestors 'none'");
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
   assert.equal(await response.text(), indexHtml);
 });
 

@@ -29,6 +29,7 @@ Out of scope:
 - `src/background.js` reads saved URLs, clears stale dynamic DNR rules, installs tab-scoped session DNR rules for all header rewrites, and exposes a message handler so the options page can refresh rules immediately after saving.
 - `options.html` and `src/options.js` provide a small settings UI for adding, opening, and removing URLs.
 - `test/rules.test.js` verifies rule construction without depending on Chrome APIs.
+- `worker/src/worker-response.mjs` serves the optional hosted workspace with anti-framing headers so external sites cannot iframe the whitelisted workspace URL directly.
 
 ## Data Flow
 
@@ -56,6 +57,7 @@ Out of scope:
 - Matching responses have `X-Frame-Options` removed only in whitelisted top-level tabs.
 - Built-in `chatgpt.com` sub-frame responses have frame option headers and CSP headers removed only in whitelisted tabs.
 - Non-whitelisted top-level pages receive no header rewrite and no cookie rewrite.
+- Optional Worker-hosted workspace responses include `Content-Security-Policy: frame-ancestors 'none'` and `X-Frame-Options: DENY`.
 - Rule-building behavior is covered by automated tests.
 
 ## Verification
