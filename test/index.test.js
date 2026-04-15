@@ -25,3 +25,14 @@ test("open-chat-in-browser-tab control is pinned to the right edge of the tab ba
 
   assert.match(html, /\.open-tab\s*\{[^}]*margin-left:\s*auto;/s);
 });
+
+test("workspace keeps one preloaded chat tab ready in the background", () => {
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+
+  assert.match(html, /let cachedChatTab = null;/);
+  assert.match(html, /function ensureCachedChatTab\(\)/);
+  assert.match(html, /function promoteCachedChatTab\(\)/);
+  assert.match(html, /cachedChatTab = \{\s*tabState,\s*panel,\s*\};/s);
+  assert.match(html, /const tab = promoteCachedChatTab\(\);/);
+  assert.match(html, /ensureCachedChatTab\(\);/);
+});

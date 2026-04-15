@@ -276,6 +276,7 @@
       const addTabButton = document.querySelector('.add-tab');
       const main = document.querySelector('main');
       let nextTabId = 2;
+      let cachedChatTab = null;
 
       function getTabs() {
         return [...document.querySelectorAll('[role="tab"]')];
@@ -332,6 +333,62 @@
         return iframe;
       }
 
+      function createChatPanel(tabState) {
+        const panel = document.createElement('section');
+        panel.className = 'panel';
+        panel.id = `panel-chat-${tabState.id}`;
+        panel.setAttribute('role', 'tabpanel');
+        panel.hidden = true;
+        panel.append(createChatIframe(tabState.url, tabState.title));
+        return panel;
+      }
+
+      function createTabButton(tabState) {
+        const tab = document.createElement('button');
+        tab.className = 'tab';
+        tab.id = `tab-chat-${tabState.id}`;
+        tab.type = 'button';
+        tab.dataset.chatId = String(tabState.id);
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', 'false');
+        tab.setAttribute('aria-controls', `panel-chat-${tabState.id}`);
+        tab.textContent = tabState.title;
+        return tab;
+      }
+
+      function ensureCachedChatTab() {
+        if (cachedChatTab?.panel?.isConnected) {
+          return;
+        }
+
+        const tabState = SessionState.createTabState(nextTabId);
+        nextTabId += 1;
+
+        const panel = createChatPanel(tabState);
+        panel.dataset.preloadedChatTab = 'true';
+        main.append(panel);
+
+        cachedChatTab = {
+          tabState,
+          panel,
+        };
+      }
+
+      function promoteCachedChatTab() {
+        ensureCachedChatTab();
+
+        const { tabState, panel } = cachedChatTab;
+        cachedChatTab = null;
+
+        delete panel.dataset.preloadedChatTab;
+        const tab = createTabButton(tabState);
+        panel.setAttribute('aria-labelledby', tab.id);
+        tabList.insertBefore(tab, addTabButton);
+
+        ensureCachedChatTab();
+        return tab;
+      }
+
       function persistSession() {
         const tabs = getTabs().map((tab) => {
           const panel = getPanelForTab(tab);
@@ -358,23 +415,9 @@
       }
 
       function createChatTab(tabState) {
-        const tab = document.createElement('button');
-        tab.className = 'tab';
-        tab.id = `tab-chat-${tabState.id}`;
-        tab.type = 'button';
-        tab.dataset.chatId = String(tabState.id);
-        tab.setAttribute('role', 'tab');
-        tab.setAttribute('aria-selected', 'false');
-        tab.setAttribute('aria-controls', `panel-chat-${tabState.id}`);
-        tab.textContent = tabState.title;
-
-        const panel = document.createElement('section');
-        panel.className = 'panel';
-        panel.id = `panel-chat-${tabState.id}`;
-        panel.setAttribute('role', 'tabpanel');
-        panel.hidden = true;
+        const tab = createTabButton(tabState);
+        const panel = createChatPanel(tabState);
         panel.setAttribute('aria-labelledby', tab.id);
-        panel.append(createChatIframe(tabState.url, tabState.title));
 
         tabList.insertBefore(tab, addTabButton);
         main.append(panel);
@@ -401,6 +444,7 @@
           activateTab(activeTab);
         }
 
+        ensureCachedChatTab();
         persistSession();
       }
 
@@ -424,11 +468,16 @@
       }
 
       function addChatTab(url = SessionState.DEFAULT_CHAT_URL) {
-        const chatId = nextTabId;
-        nextTabId += 1;
+        if (url === SessionState.DEFAULT_CHAT_URL) {
+          const tab = promoteCachedChatTab();
+          activateTab(tab);
+          return;
+        }
+
         const tab = createChatTab(
-          SessionState.createTabState(chatId, SessionState.DEFAULT_CHAT_TITLE, url),
+          SessionState.createTabState(nextTabId, SessionState.DEFAULT_CHAT_TITLE, url),
         );
+        nextTabId += 1;
         activateTab(tab);
       }
 
