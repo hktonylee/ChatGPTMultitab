@@ -85,9 +85,7 @@ The extension is inactive on non-whitelisted top-level pages: no frame-option he
 
 - The extension requests `<all_urls>` host permissions so it can apply user-entered rules.
 - It reads ChatGPT cookies and injects them only into tab-scoped ChatGPT iframe requests from whitelisted top-level pages.
-- It is meant for trusted local use, not general browsing.
 - Do not whitelist untrusted URLs.
-- Do not add untrusted URLs just to force them into a frame.
 
 ## Project layout
 
