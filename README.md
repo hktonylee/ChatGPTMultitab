@@ -1,6 +1,6 @@
 # ChatGPT Multitab System
 
-`ChatGPT Multitab System` is a Chrome extension for local ChatGPT workspace setups where you want to keep ChatGPT open in a multitab iframe layout and selectively allow trusted pages to load inside that workflow.
+`ChatGPT Multitab System` is a Chrome extension that lets you use the official ChatGPT UI with workspace tab support.
 
 The extension is built for unpacked local use. It is not packaged for the Chrome Web Store.
 
