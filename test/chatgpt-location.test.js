@@ -12,3 +12,13 @@ test("chatgpt content script forwards workspace keyboard shortcuts to the parent
   assert.match(source, /action,/);
   assert.match(source, /document\.addEventListener\("keydown", postWorkspaceShortcutToParent\);/);
 });
+
+test("chatgpt content script focuses the Ask anything prompt when the workspace asks", () => {
+  const source = fs.readFileSync(path.join(__dirname, "..", "src", "chatgpt-location.js"), "utf8");
+
+  assert.match(source, /function findAskAnythingInput\(\)/);
+  assert.match(source, /Ask anything/);
+  assert.match(source, /function focusAskAnythingInput\(\)/);
+  assert.match(source, /type !== "focus-chat-prompt"/);
+  assert.match(source, /window\.addEventListener\("message", handleWorkspaceMessage\);/);
+});
