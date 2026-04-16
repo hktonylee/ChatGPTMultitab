@@ -93,6 +93,60 @@ function postWorkspaceShortcutToParent(event) {
   );
 }
 
+function findAskAnythingInput() {
+  const selectors = [
+    'textarea[placeholder*="Ask anything" i]',
+    'textarea[aria-label*="Ask anything" i]',
+    '[contenteditable="true"][aria-label*="Ask anything" i]',
+    '[contenteditable="true"][data-placeholder*="Ask anything" i]',
+    '#prompt-textarea',
+  ];
+
+  for (const selector of selectors) {
+    const input = document.querySelector(selector);
+
+    if (input) {
+      return input;
+    }
+  }
+
+  return null;
+}
+
+function focusAskAnythingInput() {
+  const input = findAskAnythingInput();
+
+  if (!input) {
+    return false;
+  }
+
+  input.focus({ preventScroll: false });
+  input.click();
+  return true;
+}
+
+function focusAskAnythingInputWithRetry(attempts = 8) {
+  if (focusAskAnythingInput() || attempts <= 1) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    focusAskAnythingInputWithRetry(attempts - 1);
+  }, 150);
+}
+
+function handleWorkspaceMessage(event) {
+  if (window.parent === window || event.source !== window.parent) {
+    return;
+  }
+
+  if (event.data?.source !== "chatgpt-multitab" || event.data.type !== "focus-chat-prompt") {
+    return;
+  }
+
+  focusAskAnythingInputWithRetry();
+}
+
 installHistoryReporter();
 installDomObserver();
 
@@ -100,6 +154,7 @@ window.addEventListener("hashchange", scheduleLocationReport);
 window.addEventListener("popstate", scheduleLocationReport);
 window.addEventListener("load", scheduleLocationReport);
 window.addEventListener("pageshow", scheduleLocationReport);
+window.addEventListener("message", handleWorkspaceMessage);
 document.addEventListener("visibilitychange", scheduleLocationReport);
 document.addEventListener("keydown", postWorkspaceShortcutToParent);
 
