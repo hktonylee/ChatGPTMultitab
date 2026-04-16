@@ -1,5 +1,6 @@
 let lastReportedPayload = "";
 let scheduledReport = 0;
+let askAnythingFocusObserver = null;
 
 function getCandidateChatUrls() {
   return [...document.querySelectorAll("a[href]")]
@@ -99,6 +100,7 @@ function findAskAnythingInput() {
     'textarea[aria-label*="Ask anything" i]',
     '[contenteditable="true"][aria-label*="Ask anything" i]',
     '[contenteditable="true"][data-placeholder*="Ask anything" i]',
+    '[data-placeholder*="Ask anything" i].placeholder',
     '#prompt-textarea',
   ];
 
@@ -106,7 +108,7 @@ function findAskAnythingInput() {
     const input = document.querySelector(selector);
 
     if (input) {
-      return input;
+      return input.closest('[contenteditable="true"]') || input;
     }
   }
 
@@ -123,6 +125,42 @@ function focusAskAnythingInput() {
   input.focus({ preventScroll: false });
   input.click();
   return true;
+}
+
+function stopObservingAskAnythingInput() {
+  askAnythingFocusObserver?.disconnect();
+  askAnythingFocusObserver = null;
+}
+
+function observeAskAnythingInput() {
+  if (askAnythingFocusObserver || focusAskAnythingInput()) {
+    return;
+  }
+
+  const root = document.body || document.documentElement;
+
+  if (!root) {
+    return;
+  }
+
+  const observer = new MutationObserver(() => {
+    if (!focusAskAnythingInput()) {
+      return;
+    }
+
+    observer.disconnect();
+    askAnythingFocusObserver = null;
+  });
+
+  askAnythingFocusObserver = observer;
+  askAnythingFocusObserver.observe(root, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["aria-label", "class", "contenteditable", "data-placeholder", "placeholder"],
+  });
+
+  window.setTimeout(stopObservingAskAnythingInput, 5000);
 }
 
 function focusAskAnythingInputWithRetry(attempts = 8) {
@@ -145,6 +183,7 @@ function handleWorkspaceMessage(event) {
   }
 
   focusAskAnythingInputWithRetry();
+  observeAskAnythingInput();
 }
 
 installHistoryReporter();

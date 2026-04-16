@@ -22,3 +22,13 @@ test("chatgpt content script focuses the Ask anything prompt when the workspace 
   assert.match(source, /type !== "focus-chat-prompt"/);
   assert.match(source, /window\.addEventListener\("message", handleWorkspaceMessage\);/);
 });
+
+test("chatgpt content script observes the Ask anything placeholder until it can focus", () => {
+  const source = fs.readFileSync(path.join(__dirname, "..", "src", "chatgpt-location.js"), "utf8");
+
+  assert.match(source, /\[data-placeholder\*="Ask anything" i\]\.placeholder/);
+  assert.match(source, /function observeAskAnythingInput\(\)/);
+  assert.match(source, /new MutationObserver/);
+  assert.match(source, /observer\.disconnect\(\);/);
+  assert.match(source, /observeAskAnythingInput\(\);/);
+});
