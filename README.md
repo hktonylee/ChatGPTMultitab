@@ -12,6 +12,7 @@ The extension is built for unpacked local use. It is not packaged for the Chrome
 
 - Lets you use the official ChatGPT web interface in a multitab workspace.
 - Keeps multiple ChatGPT tabs available in one browser page.
+- Restores all workspace tabs when you reopen the multitab page.
 - Uses your existing `chatgpt.com` session so the embedded ChatGPT tabs stay signed in.
 - Keeps one ChatGPT tab preloaded so opening a new workspace tab is faster.
 
