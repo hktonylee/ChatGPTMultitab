@@ -1,22 +1,17 @@
 DIST_DIR := dist
 PACKAGE_NAME := chatgpt-multitab-system
 PACKAGE_ZIP := $(DIST_DIR)/$(PACKAGE_NAME).zip
-PACKAGE_FILES := \
-	manifest.json \
-	options.html \
-	extension-icon.png \
-	src \
-	styles
+FIREFOX_PACKAGE_ZIP := $(DIST_DIR)/$(PACKAGE_NAME)-firefox.zip
 
-.PHONY: package clean-package
+.PHONY: package package-chromium package-firefox clean-package
 
-package: $(PACKAGE_ZIP)
-	@printf 'Created %s\n' "$(PACKAGE_ZIP)"
+package: package-chromium
 
-$(PACKAGE_ZIP): $(PACKAGE_FILES)
-	@mkdir -p "$(DIST_DIR)"
-	@rm -f "$(PACKAGE_ZIP)"
-	@zip -q -r "$(PACKAGE_ZIP)" $(PACKAGE_FILES)
+package-chromium:
+	@npm run package:chromium
+
+package-firefox:
+	@npm run package:firefox
 
 clean-package:
-	@rm -f "$(PACKAGE_ZIP)"
+	@rm -rf "$(DIST_DIR)/build" "$(PACKAGE_ZIP)" "$(FIREFOX_PACKAGE_ZIP)"

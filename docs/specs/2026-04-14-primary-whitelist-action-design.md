@@ -24,7 +24,7 @@ Change the browser action so clicking the extension icon opens the whitelist man
 
 ### Browser action
 
-The extension currently declares `options.html` as a popup. That prevents a normal click handler from running. The manifest will stop declaring a popup, and the background service worker will register `chrome.action.onClicked`.
+The extension currently declares `options.html` as a popup. That prevents a normal click handler from running. The manifest will stop declaring a popup, and the background worker will register `action.onClicked`.
 
 When the active tab URL exactly matches the whitelist, clicking the action opens the extension options page. When it does not match and a primary URL exists, clicking the action opens the primary URL. When no primary URL exists, clicking the action opens the options page.
 
@@ -75,5 +75,5 @@ UI behavior will stay thin and delegate ordering/state decisions to helper funct
 
 ## Risks
 
-- Chrome action behavior changes between popup and click-handler mode. This is contained to `manifest.json` and `src/background.js`.
+- Browser action behavior changes between popup and click-handler mode. This is contained to `manifest.json` and `src/background.js`.
 - Inconsistent storage state from older installs. This is addressed by normalization during load/save.

@@ -2,15 +2,15 @@
 
 ## Goal
 
-Create an unpacked Chrome extension for a multitab ChatGPT workspace that removes frame-blocking response headers only for user-configured exact URLs. The intended use case is trusted local ChatGPT tab workflows that need to embed pages which set `X-Frame-Options`.
+Create an unpacked browser extension for a multitab ChatGPT workspace that removes frame-blocking response headers only for user-configured exact URLs. The intended use case is trusted local ChatGPT tab workflows that need to embed pages which set `X-Frame-Options`.
 
 ## Scope
 
 In scope:
 
-- Manifest V3 Chrome extension.
+- Manifest V3 extension for Chromium browsers and Firefox.
 - User-configurable exact URL list.
-- Persistent URL storage using Chrome extension storage.
+- Persistent URL storage using extension storage.
 - Tab-scoped session `declarativeNetRequest` rules that remove `X-Frame-Options`.
 - Built-in `chatgpt.com` iframe access rule for whitelisted top-level tabs that removes frame option headers and frame-blocking CSP headers.
 - Documentation for loading and configuring the unpacked extension.
@@ -24,7 +24,7 @@ Out of scope:
 
 ## Architecture
 
-- `manifest.json` declares a Manifest V3 extension with an options page, background service worker, storage permission, `declarativeNetRequestWithHostAccess`, and broad host permissions so user-entered URLs can work.
+- `manifest.json` declares the source Manifest V3 extension with an options page, Chromium background service worker, storage permission, `declarativeNetRequestWithHostAccess`, and broad host permissions so user-entered URLs can work. Firefox packaging generates a target manifest with `background.scripts`.
 - `src/rules.js` owns pure rule construction. It normalizes user URLs, assigns stable rule IDs, and builds tab-scoped frame-option and `chatgpt.com` iframe access rules.
 - `src/background.js` reads saved URLs, clears stale dynamic DNR rules, installs tab-scoped session DNR rules for all header rewrites, and exposes a message handler so the options page can refresh rules immediately after saving.
 - `options.html` and `src/options.js` provide a small settings UI for adding, opening, and removing URLs.
@@ -35,18 +35,18 @@ Out of scope:
 
 1. User opens the extension options page.
 2. User adds one or more exact URLs, for example `http://localhost:8080/`.
-3. Options page saves URLs to `chrome.storage.local`.
+3. Options page saves URLs to extension local storage.
 4. Options page sends a message to the background worker to refresh rules.
 5. The background worker clears stale dynamic DNR rules.
 6. The background worker finds tabs whose top-level URL exactly matches the saved URL list.
-7. If no tab matches, Chrome has no active header rewrite or cookie rewrite rules from the extension.
-8. If tabs match, Chrome applies frame-option removal and ChatGPT iframe access, including cookie header injection and CSP removal, only in those whitelisted tabs.
+7. If no tab matches, the browser has no active header rewrite or cookie rewrite rules from the extension.
+8. If tabs match, the browser applies frame-option removal and ChatGPT iframe access, including cookie header injection and CSP removal, only in those whitelisted tabs.
 
 ## Error Handling
 
 - Empty URLs are ignored.
 - Duplicate URLs are collapsed.
-- Invalid URL filter strings are rejected by Chrome when rules are installed; the background worker logs the failure.
+- Invalid URL filter strings are rejected by the browser when rules are installed; the background worker logs the failure.
 - The options page reports save failures to the user.
 
 ## Acceptance Criteria
@@ -64,4 +64,4 @@ Out of scope:
 
 - Run the Node test suite for pure rule-building behavior.
 - Run a syntax check for JavaScript files.
-- Manually load the extension in Chrome and test with a local page if browser verification is needed.
+- Manually load the extension in Chrome and Firefox and test with a local page if browser verification is needed.

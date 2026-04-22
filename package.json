@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "package": "node scripts/build-package.mjs chromium",
+    "package:chromium": "node scripts/build-package.mjs chromium",
+    "package:firefox": "node scripts/build-package.mjs firefox",
     "test": "node --test test/*.test.js worker/test/*.test.js",
-    "check": "node --check src/rules.js && node --check src/background.js && node --check src/options.js && node --check src/session-state.js && node --check src/chatgpt-url.js && node --check src/keyboard-shortcuts.js && node --check src/chatgpt-location.js && node --check worker/src/worker-response.mjs && node --check worker/src/worker.mjs"
+    "check": "node --check scripts/build-package.mjs && node --check src/rules.js && node --check src/background.js && node --check src/options.js && node --check src/session-state.js && node --check src/chatgpt-url.js && node --check src/keyboard-shortcuts.js && node --check src/chatgpt-location.js && node --check worker/src/worker-response.mjs && node --check worker/src/worker.mjs"
   }
 }

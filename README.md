@@ -1,8 +1,8 @@
 # ChatGPT Multitab System
 
-`ChatGPT Multitab System` is a Chrome extension that lets you use the official ChatGPT UI with workspace tab support.
+`ChatGPT Multitab System` is a browser extension that lets you use the official ChatGPT UI with workspace tab support.
 
-The extension is built for unpacked local use. It is not packaged for the Chrome Web Store.
+The extension is built for unpacked local use in Chromium browsers and Firefox. It is not packaged for the Chrome Web Store or Firefox Add-ons.
 
 | Workspace | Configuration |
 | --- | --- |
@@ -20,10 +20,10 @@ Behind the scenes, the extension removes frame-blocking headers only for exact w
 
 ## Requirements
 
-- Google Chrome, Microsoft Edge, or another Chromium browser that supports Manifest V3 extensions
-- Developer mode enabled in `chrome://extensions`
+- Google Chrome, Microsoft Edge, another Chromium browser, or Firefox with Manifest V3 extension support
+- Developer mode enabled in `chrome://extensions` for Chromium browsers, or temporary add-on loading through `about:debugging` in Firefox
 
-## Install on your machine
+## Install on Chromium
 
 1. Download or clone this repository to your machine.
 2. Open `chrome://extensions`.
@@ -33,6 +33,30 @@ Behind the scenes, the extension removes frame-blocking headers only for exact w
 6. Open the extension details page and pin the extension if you want quick access.
 
 If you want to use `file://` URLs, also enable **Allow access to file URLs** in the extension details page.
+
+## Build for Firefox
+
+Create a Firefox-ready package:
+
+```sh
+npm run package:firefox
+```
+
+The command writes `dist/chatgpt-multitab-system-firefox.zip` and stages the generated extension files under `dist/build/firefox/`. The Firefox package uses the same source files as Chromium, but its generated manifest declares `background.scripts` because Firefox does not use the Chromium `background.service_worker` entry.
+
+You can also run the same target through Make:
+
+```sh
+make package-firefox
+```
+
+## Install on Firefox
+
+1. Download or clone this repository to your machine.
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on...**.
+4. Select `dist/build/firefox/manifest.json` after running the Firefox build, or select any file from the extracted Firefox zip.
+5. Keep the repository folder in place while the temporary add-on is loaded.
 
 ## How to use it
 
@@ -66,7 +90,7 @@ URLs must match exactly. For example, `https://example.com/page` and `https://ex
 
 ## Project layout
 
-- `manifest.json`: Chrome extension manifest
+- `manifest.json`: cross-browser Manifest V3 extension manifest
 - `options.html`: settings UI
 - `src/background.js`: installs and refreshes tab-scoped session rules
 - `src/rules.js`: rule generation and URL normalization
@@ -93,11 +117,18 @@ Run syntax checks:
 npm run check
 ```
 
+Build packages:
+
+```sh
+npm run package:chromium
+npm run package:firefox
+```
+
 ## Cloudflare Worker
 
 The Cloudflare Worker is optional. You only need it when you want to host the workspace at an HTTPS URL.
 
-Chrome and Edge require an HTTPS path when you use **Install page as app**. Cloudflare Workers are an easy, cheap way to host the workspace with HTTPS.
+Chrome, Edge, and Firefox require an HTTPS path when you use **Install page as app**. Cloudflare Workers are an easy, cheap way to host the workspace with HTTPS.
 
 The Worker lives in `worker/`. Its entrypoint is `worker/src/worker.mjs`, and `worker/wrangler.toml` imports the root `index.html` as text and returns it with a `text/html` response.
 
@@ -141,6 +172,6 @@ npx wrangler deploy --config worker/wrangler.toml
 ## Limitations
 
 - This repo is currently set up for unpacked local installation.
-- It does not publish itself to the Chrome Web Store.
+- It does not publish itself to browser extension stores.
 - It does not sync settings across browsers.
 - CSP removal is limited to the built-in `chatgpt.com` iframe workflow, not arbitrary configured URLs.

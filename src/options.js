@@ -6,6 +6,9 @@ const input = document.querySelector("#pattern-input");
 const list = document.querySelector("#pattern-list");
 const emptyState = document.querySelector("#empty-state");
 const statusMessage = document.querySelector("#status");
+const extensionApi = typeof browser !== "undefined" && browser.runtime
+  ? browser
+  : chrome;
 
 let patterns = [];
 let primaryPattern = "";
@@ -87,7 +90,7 @@ function renderPatterns() {
 
 async function getCurrentTabUrl() {
   try {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tabs = await extensionApi.tabs.query({ active: true, currentWindow: true });
     return tabs[0] && tabs[0].url ? tabs[0].url : "";
   } catch (_error) {
     return "";
@@ -95,7 +98,7 @@ async function getCurrentTabUrl() {
 }
 
 async function refreshRules() {
-  const response = await chrome.runtime.sendMessage({ type: "refreshRules" });
+  const response = await extensionApi.runtime.sendMessage({ type: "refreshRules" });
 
   if (!response || !response.ok) {
     throw new Error(response && response.error ? response.error : "Rule refresh failed.");
@@ -109,7 +112,7 @@ async function savePatterns(nextPatterns) {
   patterns = normalizedState.patterns;
   primaryPattern = normalizedState.primaryPattern;
 
-  await chrome.storage.local.set({
+  await extensionApi.storage.local.set({
     [STORAGE_KEY]: patterns,
     [PRIMARY_STORAGE_KEY]: primaryPattern,
   });
@@ -144,7 +147,7 @@ async function setPrimary(pattern) {
 
 async function openPattern(pattern) {
   try {
-    await chrome.tabs.create({ url: pattern });
+    await extensionApi.tabs.create({ url: pattern });
   } catch (error) {
     setStatus(error.message, true);
   }
@@ -171,7 +174,7 @@ form.addEventListener("submit", async (event) => {
 async function loadPatterns() {
   try {
     const [stored, activeUrl] = await Promise.all([
-      chrome.storage.local.get({ [STORAGE_KEY]: [], [PRIMARY_STORAGE_KEY]: "" }),
+      extensionApi.storage.local.get({ [STORAGE_KEY]: [], [PRIMARY_STORAGE_KEY]: "" }),
       getCurrentTabUrl(),
     ]);
 
@@ -184,7 +187,7 @@ async function loadPatterns() {
     primaryPattern = normalizedState.primaryPattern;
     currentUrl = activeUrl;
 
-    await chrome.storage.local.set({
+    await extensionApi.storage.local.set({
       [STORAGE_KEY]: patterns,
       [PRIMARY_STORAGE_KEY]: primaryPattern,
     });
