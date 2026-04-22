@@ -9,6 +9,7 @@ test("source manifest declares the Chromium background service worker", () => {
   assert.equal(manifest.manifest_version, 3);
   assert.equal(manifest.background.service_worker, "src/background.js");
   assert.equal(manifest.background.scripts, undefined);
+  assert.equal(manifest.permissions.includes("webRequestBlocking"), false);
 });
 
 test("workspace page injects session state inline instead of fetching a relative script", () => {

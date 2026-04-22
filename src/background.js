@@ -10,6 +10,22 @@ const STORAGE_KEY = "urlPatterns";
 const PRIMARY_STORAGE_KEY = "primaryUrl";
 const CHATGPT_COOKIE_URL = "https://chatgpt.com/";
 const CHATGPT_COOKIE_DOMAIN = "chatgpt.com";
+const CHATGPT_WEBREQUEST_URLS = ["https://chatgpt.com/*", "https://*.chatgpt.com/*"];
+const CHATGPT_REQUEST_HEADERS_TO_REMOVE = new Set([
+  "origin",
+  "referer",
+  "sec-fetch-dest",
+  "sec-fetch-mode",
+  "sec-fetch-site",
+  "sec-fetch-user",
+]);
+const CHATGPT_FRAME_RESPONSE_HEADERS_TO_REMOVE = new Set([
+  "content-security-policy",
+  "content-security-policy-report-only",
+  "frame-options",
+  "x-frame-options",
+]);
+const CHATGPT_SESSION_SET_COOKIE_PATTERN = /^(?:__Secure-)?next-auth\.session-token=/i;
 
 function getExtensionApi() {
   if (typeof browser !== "undefined" && browser.runtime) {
@@ -54,9 +70,10 @@ async function clearDynamicRules(extensionApi = getExtensionApi()) {
 
 async function getChatGptCookieHeader(extensionApi = getExtensionApi()) {
   const cookies = await extensionApi.cookies.getAll({ url: CHATGPT_COOKIE_URL });
+  const cookieHeaderValue = XfoRuleBuilder.buildChatGptCookieHeader(cookies);
 
-  if (cookies.length > 0) {
-    return XfoRuleBuilder.buildChatGptCookieHeader(cookies);
+  if (cookieHeaderValue) {
+    return cookieHeaderValue;
   }
 
   const domainCookies = await extensionApi.cookies.getAll({ domain: CHATGPT_COOKIE_DOMAIN });
@@ -73,6 +90,108 @@ async function getWhitelistedTabIds(patterns, extensionApi = getExtensionApi()) 
       XfoRuleBuilder.doesUrlMatchPattern(tab.url, pattern)
     )))
     .map((tab) => tab.id);
+}
+
+async function isWhitelistedTabId(tabId, extensionApi = getExtensionApi()) {
+  if (!Number.isInteger(tabId) || tabId < 0 || !extensionApi?.tabs?.get) {
+    return false;
+  }
+
+  const tab = await extensionApi.tabs.get(tabId);
+  return isWhitelistedUrl(tab.url, extensionApi);
+}
+
+function removeChatGptFrameBlockingHeaders(responseHeaders = []) {
+  return responseHeaders.filter((header) => {
+    const headerName = String(header.name || "").toLowerCase();
+
+    if (CHATGPT_FRAME_RESPONSE_HEADERS_TO_REMOVE.has(headerName)) {
+      return false;
+    }
+
+    return !isRejectedChatGptSetCookieHeader(header);
+  });
+}
+
+function removeRejectedChatGptSetCookieHeaders(responseHeaders = []) {
+  return responseHeaders.filter(isAllowedChatGptResponseHeader);
+}
+
+function buildChatGptRequestHeaders(requestHeaders = [], cookieHeaderValue = "") {
+  const nextHeaders = requestHeaders.filter((header) => {
+    const headerName = String(header.name || "").toLowerCase();
+    return headerName !== "cookie" && !CHATGPT_REQUEST_HEADERS_TO_REMOVE.has(headerName);
+  });
+
+  if (cookieHeaderValue) {
+    nextHeaders.push({
+      name: "Cookie",
+      value: cookieHeaderValue,
+    });
+  }
+
+  return nextHeaders;
+}
+
+function isRejectedChatGptSetCookieHeader(header) {
+  return !isAllowedChatGptResponseHeader(header);
+}
+
+function isAllowedChatGptResponseHeader(header) {
+  const headerName = String(header.name || "").toLowerCase();
+
+  if (headerName === "set-cookie") {
+    return CHATGPT_SESSION_SET_COOKIE_PATTERN.test(String(header.value || ""));
+  }
+
+  return true;
+}
+
+function shouldRegisterFirefoxWebRequestFallback(extensionApi = getExtensionApi()) {
+  return (
+    typeof browser !== "undefined"
+    && extensionApi === browser
+    && Boolean(extensionApi.webRequest?.onHeadersReceived)
+  );
+}
+
+function registerFirefoxWebRequestFallback(extensionApi = getExtensionApi()) {
+  if (!shouldRegisterFirefoxWebRequestFallback(extensionApi)) {
+    return;
+  }
+
+  extensionApi.webRequest.onBeforeSendHeaders.addListener(
+    async (details) => {
+      if (!(await isWhitelistedTabId(details.tabId, extensionApi))) {
+        return {};
+      }
+
+      return {
+        requestHeaders: buildChatGptRequestHeaders(
+          details.requestHeaders,
+          await getChatGptCookieHeader(extensionApi),
+        ),
+      };
+    },
+    { urls: CHATGPT_WEBREQUEST_URLS },
+    ["blocking", "requestHeaders"],
+  );
+
+  extensionApi.webRequest.onHeadersReceived.addListener(
+    async (details) => {
+      if (!(await isWhitelistedTabId(details.tabId, extensionApi))) {
+        return {};
+      }
+
+      return {
+        responseHeaders: details.type === "sub_frame"
+          ? removeChatGptFrameBlockingHeaders(details.responseHeaders)
+          : removeRejectedChatGptSetCookieHeaders(details.responseHeaders),
+      };
+    },
+    { urls: CHATGPT_WEBREQUEST_URLS },
+    ["blocking", "responseHeaders"],
+  );
 }
 
 async function refreshSessionRules(patterns, extensionApi = getExtensionApi()) {
@@ -186,15 +305,22 @@ if (extensionApi) {
 
     return true;
   });
+
+  registerFirefoxWebRequestFallback(extensionApi);
 }
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
+    buildChatGptRequestHeaders,
     getExtensionApi,
     getWhitelistedTabIds,
     handleActionClick,
     isWhitelistedUrl,
+    registerFirefoxWebRequestFallback,
+    removeChatGptFrameBlockingHeaders,
+    removeRejectedChatGptSetCookieHeaders,
     refreshRules,
     refreshSessionRules,
+    shouldRegisterFirefoxWebRequestFallback,
   };
 }

@@ -20,10 +20,15 @@
     { header: "origin", operation: "remove" },
   ];
   const CHATGPT_RESOURCE_TYPES = ["sub_frame", "image", "xmlhttprequest", "media"];
+  const NEXT_AUTH_SESSION_COOKIE_PATTERN = /(?:^|-)next-auth\.session-token$/;
+
+  function isForwardableChatGptCookie(cookie) {
+    return cookie && cookie.name && NEXT_AUTH_SESSION_COOKIE_PATTERN.test(cookie.name);
+  }
 
   function buildChatGptCookieHeader(cookies) {
     return (cookies || [])
-      .filter((cookie) => cookie && cookie.name)
+      .filter(isForwardableChatGptCookie)
       .map((cookie) => `${cookie.name}=${cookie.value || ""}`)
       .join("; ");
   }

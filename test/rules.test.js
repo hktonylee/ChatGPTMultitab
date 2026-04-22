@@ -120,15 +120,27 @@ test("builds a chatgpt.com iframe access rule limited to whitelisted tab ids", (
   });
 });
 
-test("serializes chatgpt cookies into a request header value", () => {
+test("serializes only chatgpt session cookies into a request header value", () => {
   assert.equal(
     buildChatGptCookieHeader([
       { name: "__Secure-next-auth.session-token", value: "abc" },
       { name: "oai-did", value: "xyz" },
     ]),
-    "__Secure-next-auth.session-token=abc; oai-did=xyz",
+    "__Secure-next-auth.session-token=abc",
   );
   assert.equal(buildChatGptCookieHeader([]), "");
+});
+
+test("does not inject next-auth non-session cookies into cross-site iframe requests", () => {
+  assert.equal(
+    buildChatGptCookieHeader([
+      { name: "__Host-next-auth.csrf-token", value: "csrf" },
+      { name: "__Secure-next-auth.callback-url", value: "https://chatgpt.com/" },
+      { name: "__Secure-next-auth.session-token", value: "session" },
+      { name: "next-auth.csrf-token", value: "legacy" },
+    ]),
+    "__Secure-next-auth.session-token=session",
+  );
 });
 
 test("does not build dynamic rules", () => {

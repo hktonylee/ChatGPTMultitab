@@ -59,6 +59,13 @@ async function writeTargetManifest(target, destinationPath) {
   const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
 
   if (target === "firefox") {
+    manifest.permissions = [
+      ...new Set([
+        ...manifest.permissions,
+        "webRequest",
+        "webRequestBlocking",
+      ]),
+    ];
     manifest.background = {
       scripts: [
         "src/rules.js",
