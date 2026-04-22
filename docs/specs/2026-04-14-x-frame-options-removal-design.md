@@ -24,7 +24,7 @@ Out of scope:
 
 ## Architecture
 
-- `manifest.json` declares the source Manifest V3 extension with an options page, Chromium background service worker, storage permission, `declarativeNetRequestWithHostAccess`, and broad host permissions so user-entered URLs can work. Firefox packaging generates a target manifest with `background.scripts`.
+- `manifest.json` declares the source Manifest V3 extension with an options page, Chromium background service worker, storage permission, `declarativeNetRequestWithHostAccess`, and broad host permissions so user-entered URLs can work. Firefox packaging generates a target manifest with `background.scripts` and Gecko-specific extension metadata.
 - `src/rules.js` owns pure rule construction. It normalizes user URLs, assigns stable rule IDs, and builds tab-scoped frame-option and `chatgpt.com` iframe access rules.
 - `src/background.js` reads saved URLs, clears stale dynamic DNR rules, installs tab-scoped session DNR rules for all header rewrites, and exposes a message handler so the options page can refresh rules immediately after saving.
 - `options.html` and `src/options.js` provide a small settings UI for adding, opening, and removing URLs.

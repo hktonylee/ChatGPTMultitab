@@ -42,7 +42,7 @@ Create a Firefox-ready package:
 npm run package:firefox
 ```
 
-The command writes `dist/chatgpt-multitab-system-firefox.zip` and stages the generated extension files under `dist/build/firefox/`. The Firefox package uses the same source files as Chromium, but its generated manifest declares `background.scripts` because Firefox does not use the Chromium `background.service_worker` entry.
+The command writes `dist/chatgpt-multitab-system-firefox.xpi` and stages the generated extension files under `dist/build/firefox/`. The Firefox package uses the same source files as Chromium, but its generated manifest declares `background.scripts` because Firefox does not use the Chromium `background.service_worker` entry.
 
 You can also run the same target through Make:
 
@@ -55,8 +55,10 @@ make package-firefox
 1. Download or clone this repository to your machine.
 2. Open `about:debugging#/runtime/this-firefox`.
 3. Click **Load Temporary Add-on...**.
-4. Select `dist/build/firefox/manifest.json` after running the Firefox build, or select any file from the extracted Firefox zip.
+4. Select `dist/build/firefox/manifest.json` after running the Firefox build, or select `dist/chatgpt-multitab-system-firefox.xpi`.
 5. Keep the repository folder in place while the temporary add-on is loaded.
+
+Do not use **Add-ons and themes > Install Add-on From File** for this local build in release Firefox. Release Firefox rejects unsigned packages there and may report the unsigned local file as corrupt.
 
 ## How to use it
 

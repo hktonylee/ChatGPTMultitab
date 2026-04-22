@@ -65,22 +65,29 @@ async function writeTargetManifest(target, destinationPath) {
         "src/background.js",
       ],
     };
+    manifest.browser_specific_settings = {
+      gecko: {
+        id: "chatgpt-multitab-system@local",
+        strict_min_version: "109.0",
+      },
+    };
   }
 
   await fs.writeFile(destinationPath, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
-async function createPackageZip(sourceDir, zipPath) {
-  await fs.mkdir(path.dirname(zipPath), { recursive: true });
-  await fs.rm(zipPath, { force: true });
-  await execFileAsync("zip", ["-q", "-r", zipPath, ...packageFiles], { cwd: sourceDir });
+async function createPackageArchive(sourceDir, archivePath) {
+  await fs.mkdir(path.dirname(archivePath), { recursive: true });
+  await fs.rm(archivePath, { force: true });
+  await execFileAsync("zip", ["-q", "-r", archivePath, ...packageFiles], { cwd: sourceDir });
 }
 
 async function main() {
   const target = getTarget();
   const targetBuildDir = path.join(buildDir, target);
   const targetPackageName = target === "chromium" ? packageName : `${packageName}-firefox`;
-  const zipPath = path.join(distDir, `${targetPackageName}.zip`);
+  const packageExtension = target === "firefox" ? "xpi" : "zip";
+  const archivePath = path.join(distDir, `${targetPackageName}.${packageExtension}`);
 
   await fs.rm(targetBuildDir, { recursive: true, force: true });
   await fs.mkdir(targetBuildDir, { recursive: true });
@@ -100,8 +107,8 @@ async function main() {
     await copyEntry(sourcePath, path.join(targetBuildDir, entry));
   }
 
-  await createPackageZip(targetBuildDir, zipPath);
-  console.log(`Created ${path.relative(rootDir, zipPath)}`);
+  await createPackageArchive(targetBuildDir, archivePath);
+  console.log(`Created ${path.relative(rootDir, archivePath)}`);
 }
 
 main().catch((error) => {

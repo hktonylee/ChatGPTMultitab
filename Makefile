@@ -1,7 +1,7 @@
 DIST_DIR := dist
 PACKAGE_NAME := chatgpt-multitab-system
 PACKAGE_ZIP := $(DIST_DIR)/$(PACKAGE_NAME).zip
-FIREFOX_PACKAGE_ZIP := $(DIST_DIR)/$(PACKAGE_NAME)-firefox.zip
+FIREFOX_PACKAGE_XPI := $(DIST_DIR)/$(PACKAGE_NAME)-firefox.xpi
 
 .PHONY: package package-chromium package-firefox clean-package
 
@@ -14,4 +14,4 @@ package-firefox:
 	@npm run package:firefox
 
 clean-package:
-	@rm -rf "$(DIST_DIR)/build" "$(PACKAGE_ZIP)" "$(FIREFOX_PACKAGE_ZIP)"
+	@rm -rf "$(DIST_DIR)/build" "$(PACKAGE_ZIP)" "$(FIREFOX_PACKAGE_XPI)"
