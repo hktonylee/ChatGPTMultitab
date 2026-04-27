@@ -31,6 +31,14 @@ test("open-chat-in-browser-tab control is pinned to the right edge of the tab ba
   assert.match(html, /\.open-tab\s*\{[^}]*margin-left:\s*auto;/s);
 });
 
+test("workspace renders a restore-closed-tab control beside the browser-tab button", () => {
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+
+  assert.match(html, /class="toolbar-button restore-tab"/);
+  assert.match(html, /aria-label="Restore most recently closed chat tab"/);
+  assert.match(html, /title="Restore most recently closed chat tab"/);
+});
+
 test("workspace keeps one preloaded chat tab ready in the background", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
@@ -71,4 +79,17 @@ test("workspace asks a new chat tab to focus the Ask anything prompt", () => {
   assert.match(html, /function focusChatPrompt\(tab\)/);
   assert.match(html, /type:\s*'focus-chat-prompt'/);
   assert.match(html, /focusChatPrompt\(tab\);\s*return;/);
+});
+
+test("workspace persists and restores a closed tab stack in reverse close order", () => {
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+
+  assert.match(html, /const restoreTabButton = document\.querySelector\('\.restore-tab'\);/);
+  assert.match(html, /closedTabs:\s*getClosedTabs\(\)/);
+  assert.match(html, /function updateRestoreTabButtonState\(\)/);
+  assert.match(html, /restoreTabButton\.disabled = getClosedTabs\(\)\.length === 0;/);
+  assert.match(html, /closedTabs\.push\(\{\s*id:/s);
+  assert.match(html, /function restoreClosedTab\(\)/);
+  assert.match(html, /const tabState = getClosedTabs\(\)\.pop\(\);/);
+  assert.match(html, /event\.target\.closest\('\.restore-tab'\)\)\s*\{\s*restoreClosedTab\(\);/s);
 });
