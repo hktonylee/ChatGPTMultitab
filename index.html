@@ -86,7 +86,8 @@
       }
 
       .tab:focus-visible,
-      .add-tab:focus-visible {
+      .add-tab:focus-visible,
+      .toolbar-button:focus-visible {
         outline: 3px solid color-mix(in oklch, var(--focus), transparent 62%);
         outline-offset: 2px;
       }
@@ -143,6 +144,16 @@
         color: var(--ink);
       }
 
+      .toolbar-button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+
+      .toolbar-button:disabled:hover {
+        background: transparent;
+        color: var(--muted);
+      }
+
       main {
         min-height: 0;
         overflow: hidden;
@@ -180,6 +191,7 @@
           Chat 1
         </button>
         <button class="add-tab" type="button" aria-label="New chat tab">+</button>
+        <button class="toolbar-button restore-tab" type="button" aria-label="Restore most recently closed chat tab" title="Restore most recently closed chat tab" disabled>&#8630;</button>
         <button class="toolbar-button open-tab" type="button" aria-label="Open active chat in new browser tab" title="Open active chat in new browser tab">&#8599;</button>
       </nav>
 
@@ -210,6 +222,7 @@
   function buildInitialTabState() {
     return {
       activeTabId: 1,
+      closedTabs: [],
       tabs: [createTabState(1)],
     };
   }
@@ -235,6 +248,19 @@
   }
 
   function sanitizeStoredTabState(storedState) {
+    const rawClosedTabs = Array.isArray(storedState?.closedTabs) ? storedState.closedTabs : [];
+    const closedTabs = rawClosedTabs
+      .map((tab) => {
+        const id = Number(tab?.id);
+
+        if (!Number.isInteger(id) || id < 1) {
+          return null;
+        }
+
+        return createTabState(id, tab?.title, tab?.url);
+      })
+      .filter(Boolean);
+
     const rawTabs = Array.isArray(storedState?.tabs) ? storedState.tabs : [];
     const tabs = rawTabs
       .map((tab) => {
@@ -258,6 +284,7 @@
 
     return {
       activeTabId,
+      closedTabs,
       tabs,
     };
   }
@@ -311,9 +338,11 @@
       const SESSION_STORAGE_KEY = 'chatgpt-multitab-session';
       const tabList = document.querySelector('[role="tablist"]');
       const addTabButton = document.querySelector('.add-tab');
+      const restoreTabButton = document.querySelector('.restore-tab');
       const main = document.querySelector('main');
       let nextTabId = 2;
       let cachedChatTab = null;
+      let closedTabs = [];
 
       function getTabs() {
         return [...document.querySelectorAll('[role="tab"]')];
@@ -321,6 +350,10 @@
 
       function shouldConfirmPageClose() {
         return getTabs().length > 1;
+      }
+
+      function getClosedTabs() {
+        return closedTabs;
       }
 
       function getPanels() {
@@ -448,6 +481,10 @@
         return tab;
       }
 
+      function updateRestoreTabButtonState() {
+        restoreTabButton.disabled = getClosedTabs().length === 0;
+      }
+
       function persistSession() {
         const tabs = getTabs().map((tab) => {
           const panel = getPanelForTab(tab);
@@ -467,10 +504,12 @@
         const activeTab = getTabs().find((tab) => tab.getAttribute('aria-selected') === 'true');
         const session = {
           activeTabId: activeTab ? getTabId(activeTab) : tabs[0]?.id || 1,
+          closedTabs: getClosedTabs(),
           tabs,
         };
 
         localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+        updateRestoreTabButtonState();
       }
 
       function createChatTab(tabState) {
@@ -488,6 +527,7 @@
         const stored = localStorage.getItem(SESSION_STORAGE_KEY);
         const parsed = stored ? JSON.parse(stored) : null;
         const session = SessionState.sanitizeStoredTabState(parsed);
+        closedTabs = session.closedTabs;
 
         nextTabId =
           session.tabs.reduce((maxId, tabState) => Math.max(maxId, Number(tabState.id) || 0), 0) + 1;
@@ -564,7 +604,18 @@
         const tabIndex = tabs.indexOf(tab);
         const wasActive = tab.getAttribute('aria-selected') === 'true';
         const panel = document.getElementById(tab.getAttribute('aria-controls'));
+        const iframe = panel?.querySelector('iframe');
         const nextTab = tabs[tabIndex + 1] || tabs[tabIndex - 1];
+
+        closedTabs.push({
+          id: getTabId(tab),
+          title: tab.textContent.trim(),
+          url:
+            iframe?.dataset.reportedChatUrl ||
+            iframe?.dataset.currentUrl ||
+            iframe?.src ||
+            SessionState.DEFAULT_CHAT_URL,
+        });
 
         tab.remove();
         panel?.remove();
@@ -575,6 +626,19 @@
         }
 
         persistSession();
+      }
+
+      function restoreClosedTab() {
+        const tabState = getClosedTabs().pop();
+
+        if (!tabState) {
+          updateRestoreTabButtonState();
+          return;
+        }
+
+        nextTabId = Math.max(nextTabId, Number(tabState.id) + 1);
+        const tab = createChatTab(tabState);
+        activateTab(tab);
       }
 
       function handleWorkspaceShortcut(action) {
@@ -670,6 +734,11 @@
 
         if (event.target.closest('.add-tab')) {
           addChatTab();
+          return;
+        }
+
+        if (event.target.closest('.restore-tab')) {
+          restoreClosedTab();
           return;
         }
 

@@ -19,6 +19,7 @@ test("creates a default tab state from a chat id", () => {
 test("builds the initial stored session state", () => {
   assert.deepEqual(buildInitialTabState(), {
     activeTabId: 1,
+    closedTabs: [],
     tabs: [
       {
         id: 1,
@@ -33,6 +34,10 @@ test("sanitizes stored tab session state", () => {
   assert.deepEqual(
     sanitizeStoredTabState({
       activeTabId: 4,
+      closedTabs: [
+        { id: 8, title: "  ", url: "https://chatgpt.com/c/closed" },
+        { id: "bad", title: "Ignored", url: "https://example.com" },
+      ],
       tabs: [
         { id: 4, title: "  ", url: "https://chatgpt.com/c/abc" },
         { id: "bad", title: "Ignored", url: "https://example.com" },
@@ -41,11 +46,27 @@ test("sanitizes stored tab session state", () => {
     }),
     {
       activeTabId: 4,
+      closedTabs: [
+        { id: 8, title: "ChatGPT", url: "https://chatgpt.com/c/closed" },
+      ],
       tabs: [
         { id: 4, title: "ChatGPT", url: "https://chatgpt.com/c/abc" },
         { id: 5, title: "Saved tab", url: DEFAULT_CHAT_URL },
       ],
     },
+  );
+});
+
+test("falls back to an empty closed tab stack when stored closed tabs are unusable", () => {
+  assert.deepEqual(
+    sanitizeStoredTabState({
+      activeTabId: 6,
+      closedTabs: [{ id: "bad", title: "Ignored", url: "https://example.com/" }],
+      tabs: [
+        { id: 6, title: "Saved tab", url: "https://chatgpt.com/c/open" },
+      ],
+    }).closedTabs,
+    [],
   );
 });
 

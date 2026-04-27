@@ -17,6 +17,7 @@
   function buildInitialTabState() {
     return {
       activeTabId: 1,
+      closedTabs: [],
       tabs: [createTabState(1)],
     };
   }
@@ -42,6 +43,19 @@
   }
 
   function sanitizeStoredTabState(storedState) {
+    const rawClosedTabs = Array.isArray(storedState?.closedTabs) ? storedState.closedTabs : [];
+    const closedTabs = rawClosedTabs
+      .map((tab) => {
+        const id = Number(tab?.id);
+
+        if (!Number.isInteger(id) || id < 1) {
+          return null;
+        }
+
+        return createTabState(id, tab?.title, tab?.url);
+      })
+      .filter(Boolean);
+
     const rawTabs = Array.isArray(storedState?.tabs) ? storedState.tabs : [];
     const tabs = rawTabs
       .map((tab) => {
@@ -65,6 +79,7 @@
 
     return {
       activeTabId,
+      closedTabs,
       tabs,
     };
   }
