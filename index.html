@@ -85,6 +85,10 @@
         background: var(--panel);
       }
 
+      .tab[data-sleeping="true"] {
+        color: #8a8a8a;
+      }
+
       .tab:focus-visible,
       .add-tab:focus-visible,
       .toolbar-button:focus-visible {
@@ -336,6 +340,7 @@
     </script>
     <script>
       const SESSION_STORAGE_KEY = 'chatgpt-multitab-session';
+      const RESTORED_IFRAME_LIMIT = 5;
       const tabList = document.querySelector('[role="tablist"]');
       const addTabButton = document.querySelector('.add-tab');
       const restoreTabButton = document.querySelector('.restore-tab');
@@ -425,13 +430,20 @@
         return iframe;
       }
 
-      function createChatPanel(tabState) {
+      function createChatPanel(tabState, { loadIframe = true } = {}) {
         const panel = document.createElement('section');
         panel.className = 'panel';
         panel.id = `panel-chat-${tabState.id}`;
         panel.setAttribute('role', 'tabpanel');
         panel.hidden = true;
-        panel.append(createChatIframe(tabState.url, tabState.title));
+
+        if (loadIframe) {
+          panel.append(createChatIframe(tabState.url, tabState.title));
+        } else {
+          panel.dataset.sleepingChatUrl = tabState.url;
+          panel.dataset.sleepingChatTitle = tabState.title;
+        }
+
         return panel;
       }
 
@@ -446,6 +458,30 @@
         tab.setAttribute('aria-controls', `panel-chat-${tabState.id}`);
         tab.textContent = tabState.title;
         return tab;
+      }
+
+      function markSleepingTab(tab, isSleeping) {
+        if (isSleeping) {
+          tab.dataset.sleeping = 'true';
+          return;
+        }
+
+        delete tab.dataset.sleeping;
+      }
+
+      function wakeSleepingTab(tab) {
+        const panel = getPanelForTab(tab);
+        const url = panel?.dataset.sleepingChatUrl;
+
+        if (!panel || !url || panel.querySelector('iframe')) {
+          return;
+        }
+
+        const title = panel.dataset.sleepingChatTitle || tab.textContent.trim();
+        panel.append(createChatIframe(url, title));
+        delete panel.dataset.sleepingChatUrl;
+        delete panel.dataset.sleepingChatTitle;
+        markSleepingTab(tab, false);
       }
 
       function ensureCachedChatTab() {
@@ -497,6 +533,7 @@
               iframe?.dataset.reportedChatUrl ||
               iframe?.dataset.currentUrl ||
               iframe?.src ||
+              panel?.dataset.sleepingChatUrl ||
               SessionState.DEFAULT_CHAT_URL,
           };
         });
@@ -512,11 +549,12 @@
         updateRestoreTabButtonState();
       }
 
-      function createChatTab(tabState) {
+      function createChatTab(tabState, { loadIframe = true } = {}) {
         const tab = createTabButton(tabState);
-        const panel = createChatPanel(tabState);
+        const panel = createChatPanel(tabState, { loadIframe });
         panel.setAttribute('aria-labelledby', tab.id);
 
+        markSleepingTab(tab, !loadIframe);
         tabList.insertBefore(tab, addTabButton);
         main.append(panel);
 
@@ -535,7 +573,10 @@
         getTabs().forEach((tab) => tab.remove());
         getPanels().forEach((panel) => panel.remove());
 
-        const restoredTabs = session.tabs.map((tabState) => createChatTab(tabState));
+        const firstLoadedTabIndex = Math.max(session.tabs.length - RESTORED_IFRAME_LIMIT, 0);
+        const restoredTabs = session.tabs.map((tabState, index) =>
+          createChatTab(tabState, { loadIframe: index >= firstLoadedTabIndex }),
+        );
         const activeTab =
           restoredTabs.find((tab) => getTabId(tab) === session.activeTabId) || restoredTabs[0];
 
@@ -548,6 +589,8 @@
       }
 
       function activateTab(tab) {
+        wakeSleepingTab(tab);
+
         const tabs = getTabs();
         const panels = getPanels();
 
@@ -614,6 +657,7 @@
             iframe?.dataset.reportedChatUrl ||
             iframe?.dataset.currentUrl ||
             iframe?.src ||
+            panel?.dataset.sleepingChatUrl ||
             SessionState.DEFAULT_CHAT_URL,
         });
 

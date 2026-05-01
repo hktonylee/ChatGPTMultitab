@@ -93,3 +93,18 @@ test("workspace persists and restores a closed tab stack in reverse close order"
   assert.match(html, /const tabState = getClosedTabs\(\)\.pop\(\);/);
   assert.match(html, /event\.target\.closest\('\.restore-tab'\)\)\s*\{\s*restoreClosedTab\(\);/s);
 });
+
+test("workspace reloads only the latest five restored iframes and sleeps the rest", () => {
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+
+  assert.match(html, /const RESTORED_IFRAME_LIMIT = 5;/);
+  assert.match(html, /\.tab\[data-sleeping="true"\]\s*\{[^}]*color:\s*#8a8a8a;/s);
+  assert.match(html, /function wakeSleepingTab\(tab\)/);
+  assert.match(html, /function createChatPanel\(tabState,\s*\{\s*loadIframe = true\s*\} = \{\}\)/);
+  assert.match(html, /panel\.dataset\.sleepingChatUrl = tabState\.url;/);
+  assert.match(html, /tab\.dataset\.sleeping = 'true';/);
+  assert.match(html, /panel\?\.dataset\.sleepingChatUrl\s*\|\|/);
+  assert.match(html, /session\.tabs\.length - RESTORED_IFRAME_LIMIT/);
+  assert.match(html, /createChatTab\(tabState,\s*\{\s*loadIframe:\s*index >= firstLoadedTabIndex/s);
+  assert.match(html, /wakeSleepingTab\(tab\);[\s\S]*const tabs = getTabs\(\);/);
+});
