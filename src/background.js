@@ -10,6 +10,8 @@ const STORAGE_KEY = "urlPatterns";
 const PRIMARY_STORAGE_KEY = "primaryUrl";
 const CHATGPT_COOKIE_URL = "https://chatgpt.com/";
 const CHATGPT_COOKIE_DOMAIN = "chatgpt.com";
+const CHATGPT_IFRAME_RULE_ID_START = 10000;
+const chatGptFrameReferersByTabId = new Map();
 
 async function getStoredPatterns(extensionChrome = chrome) {
   const stored = await extensionChrome.storage.local.get({ [STORAGE_KEY]: [] });
@@ -71,10 +73,18 @@ async function refreshSessionRules(patterns, extensionChrome = chrome) {
 
   if (tabIds.length > 0) {
     const cookieHeaderValue = await getChatGptCookieHeader(extensionChrome);
+    const chatGptIframeRules = tabIds.map((tabId, index) => (
+      XfoRuleBuilder.buildChatGptIframeRequestHeaderRule(
+        cookieHeaderValue,
+        [tabId],
+        chatGptFrameReferersByTabId.get(tabId),
+        CHATGPT_IFRAME_RULE_ID_START + index,
+      )
+    ));
 
     addRules.push(
       ...XfoRuleBuilder.buildHeaderRemovalRules(patterns, tabIds),
-      XfoRuleBuilder.buildChatGptIframeRequestHeaderRule(cookieHeaderValue, tabIds),
+      ...chatGptIframeRules,
     );
   }
 
@@ -84,6 +94,25 @@ async function refreshSessionRules(patterns, extensionChrome = chrome) {
   });
 
   return addRules.length;
+}
+
+function clearChatGptFrameReferers() {
+  chatGptFrameReferersByTabId.clear();
+}
+
+async function refreshChatGptFrameReferer(message, sender = {}, extensionChrome = chrome) {
+  const tabId = sender.tab?.id;
+
+  if (!Number.isInteger(tabId) || !(await isWhitelistedUrl(sender.tab?.url, extensionChrome))) {
+    return refreshRules(extensionChrome);
+  }
+
+  chatGptFrameReferersByTabId.set(
+    tabId,
+    XfoRuleBuilder.normalizeChatGptRefererUrl(message?.url),
+  );
+
+  return refreshRules(extensionChrome);
 }
 
 async function refreshRules(extensionChrome = chrome) {
@@ -152,18 +181,23 @@ if (typeof chrome !== "undefined" && chrome.runtime) {
     });
   });
 
-  chrome.tabs.onRemoved.addListener(() => {
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    chatGptFrameReferersByTabId.delete(tabId);
     refreshRules().catch((error) => {
       console.error("Failed to refresh tab-scoped ChatGPT rules", error);
     });
   });
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (!message || message.type !== "refreshRules") {
+    if (!message || (message.type !== "refreshRules" && message.type !== "chatgptFrameLocation")) {
       return false;
     }
 
-    refreshRules()
+    const refreshPromise = message.type === "chatgptFrameLocation"
+      ? refreshChatGptFrameReferer(message, _sender)
+      : refreshRules();
+
+    refreshPromise
       .then((ruleCount) => sendResponse({ ok: true, ruleCount }))
       .catch((error) => {
         console.error("Failed to refresh X-Frame-Options removal rules", error);
@@ -176,9 +210,11 @@ if (typeof chrome !== "undefined" && chrome.runtime) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
+    clearChatGptFrameReferers,
     getWhitelistedTabIds,
     handleActionClick,
     isWhitelistedUrl,
+    refreshChatGptFrameReferer,
     refreshRules,
     refreshSessionRules,
   };

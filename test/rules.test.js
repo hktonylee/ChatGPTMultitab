@@ -110,6 +110,23 @@ test("builds a chatgpt.com iframe access rule with an injected cookie header", (
   );
 });
 
+test("builds a chatgpt.com iframe access rule using the iframe url as referer", () => {
+  const rule = buildChatGptIframeRequestHeaderRule(
+    "a=1",
+    [7],
+    "https://chatgpt.com/c/69f8da25-a54c-832d-9efd-db2af34e14c0",
+  );
+
+  assert.deepEqual(
+    rule.action.requestHeaders.find((header) => header.header === "referer"),
+    {
+      header: "referer",
+      operation: "set",
+      value: "https://chatgpt.com/c/69f8da25-a54c-832d-9efd-db2af34e14c0",
+    },
+  );
+});
+
 test("builds a chatgpt.com iframe access rule limited to whitelisted tab ids", () => {
   const rule = buildChatGptIframeRequestHeaderRule("a=1", [7, 9]);
 

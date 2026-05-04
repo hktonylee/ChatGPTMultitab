@@ -11,13 +11,14 @@
 
   const CHATGPT_IFRAME_RULE_ID = 1;
   const USER_RULE_ID_START = 100;
+  const CHATGPT_ORIGIN = "https://chatgpt.com";
+  const CHATGPT_DEFAULT_REFERER = `${CHATGPT_ORIGIN}/`;
   const CHATGPT_IFRAME_REQUEST_HEADER_REMOVALS = [
     { header: "sec-fetch-dest", operation: "remove" },
     { header: "sec-fetch-mode", operation: "remove" },
     { header: "sec-fetch-site", operation: "remove" },
     { header: "sec-fetch-user", operation: "remove" },
-    { header: "origin", operation: "set", value: "https://chatgpt.com" },
-    { header: "referer", operation: "set", value: "https://chatgpt.com/" },
+    { header: "origin", operation: "set", value: CHATGPT_ORIGIN },
   ];
   const CHATGPT_RESOURCE_TYPES = ["sub_frame", "image", "xmlhttprequest", "media"];
 
@@ -124,10 +125,35 @@
     }));
   }
 
-  function buildChatGptIframeRequestHeaderRule(cookieHeaderValue = "", tabIds = []) {
+  function normalizeChatGptRefererUrl(url) {
+    try {
+      const parsedUrl = new URL(String(url || ""), CHATGPT_DEFAULT_REFERER);
+
+      if (parsedUrl.origin !== CHATGPT_ORIGIN) {
+        return CHATGPT_DEFAULT_REFERER;
+      }
+
+      return parsedUrl.href;
+    } catch (_error) {
+      return CHATGPT_DEFAULT_REFERER;
+    }
+  }
+
+  function buildChatGptIframeRequestHeaderRule(
+    cookieHeaderValue = "",
+    tabIds = [],
+    refererUrl = CHATGPT_DEFAULT_REFERER,
+    ruleId = CHATGPT_IFRAME_RULE_ID,
+  ) {
     const requestHeaders = CHATGPT_IFRAME_REQUEST_HEADER_REMOVALS.map((headerRemoval) => ({
       ...headerRemoval,
     }));
+    requestHeaders.push({
+      header: "referer",
+      operation: "set",
+      value: normalizeChatGptRefererUrl(refererUrl),
+    });
+
     const condition = {
       urlFilter: "||chatgpt.com/",
       resourceTypes: [...CHATGPT_RESOURCE_TYPES],
@@ -146,7 +172,7 @@
     }
 
     return {
-      id: CHATGPT_IFRAME_RULE_ID,
+      id: ruleId,
       priority: 2,
       action: {
         type: "modifyHeaders",
@@ -169,6 +195,7 @@
     buildDynamicRules,
     buildHeaderRemovalRules,
     doesUrlMatchPattern,
+    normalizeChatGptRefererUrl,
     normalizePatternState,
     normalizePatterns,
     removePatternFromState,

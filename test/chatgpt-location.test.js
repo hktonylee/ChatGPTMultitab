@@ -32,3 +32,12 @@ test("chatgpt content script observes the Ask anything placeholder until it can 
   assert.match(source, /observer\.disconnect\(\);/);
   assert.match(source, /observeAskAnythingInput\(\);/);
 });
+
+test("chatgpt content script reports iframe url to the extension background", () => {
+  const source = fs.readFileSync(path.join(__dirname, "..", "src", "chatgpt-location.js"), "utf8");
+
+  assert.match(source, /function reportLocationToExtension\(url\)/);
+  assert.match(source, /type: "chatgptFrameLocation"/);
+  assert.match(source, /chrome\.runtime\.sendMessage/);
+  assert.match(source, /reportLocationToExtension\(url\);/);
+});

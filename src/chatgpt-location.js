@@ -8,6 +8,17 @@ function getCandidateChatUrls() {
     .filter(Boolean);
 }
 
+function reportLocationToExtension(url) {
+  if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+    return;
+  }
+
+  chrome.runtime.sendMessage({
+    type: "chatgptFrameLocation",
+    url,
+  });
+}
+
 function reportLocationToParent() {
   const url = ChatGptUrl.extractPersistedChatUrl(window.location.href, getCandidateChatUrls());
   const title = String(document.title || "").trim();
@@ -28,6 +39,7 @@ function reportLocationToParent() {
     },
     "*",
   );
+  reportLocationToExtension(url);
 }
 
 function scheduleLocationReport() {

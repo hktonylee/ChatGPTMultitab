@@ -1,7 +1,13 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { getWhitelistedTabIds, handleActionClick, refreshRules } = require("../src/background");
+const {
+  clearChatGptFrameReferers,
+  getWhitelistedTabIds,
+  handleActionClick,
+  refreshChatGptFrameReferer,
+  refreshRules,
+} = require("../src/background");
 
 test("opens the primary page when one is configured", async () => {
   const calls = [];
@@ -109,6 +115,7 @@ test("finds only tabs whose top-level url exactly matches the whitelist", async 
 });
 
 test("installs every rewrite as session rules only for whitelisted tabs", async () => {
+  clearChatGptFrameReferers();
   const calls = [];
   const chrome = {
     storage: {
@@ -183,7 +190,7 @@ test("installs every rewrite as session rules only for whitelisted tabs", async 
             },
           },
           {
-            id: 1,
+            id: 10000,
             priority: 2,
             action: {
               type: "modifyHeaders",
@@ -216,7 +223,70 @@ test("installs every rewrite as session rules only for whitelisted tabs", async 
   ]);
 });
 
+test("updates the tab-scoped ChatGPT referer from the reported iframe url", async () => {
+  clearChatGptFrameReferers();
+  const calls = [];
+  const chrome = {
+    storage: {
+      local: {
+        async get(defaults) {
+          return { ...defaults, urlPatterns: ["http://localhost:8080/"] };
+        },
+      },
+    },
+    cookies: {
+      async getAll(query) {
+        if (query.url === "https://chatgpt.com/") {
+          return [{ name: "session", value: "abc" }];
+        }
+
+        return [];
+      },
+    },
+    tabs: {
+      async query() {
+        return [{ id: 11, url: "http://localhost:8080/" }];
+      },
+    },
+    declarativeNetRequest: {
+      async getDynamicRules() {
+        return [];
+      },
+      async updateDynamicRules(details) {
+        calls.push(["updateDynamicRules", details]);
+      },
+      async getSessionRules() {
+        return [{ id: 1 }];
+      },
+      async updateSessionRules(details) {
+        calls.push(["updateSessionRules", details]);
+      },
+    },
+  };
+
+  const ruleCount = await refreshChatGptFrameReferer(
+    {
+      type: "chatgptFrameLocation",
+      url: "https://chatgpt.com/c/69f8da25-a54c-832d-9efd-db2af34e14c0",
+    },
+    { tab: { id: 11, url: "http://localhost:8080/" } },
+    chrome,
+  );
+
+  assert.equal(ruleCount, 2);
+  const iframeRule = calls.at(-1)[1].addRules.find((rule) => rule.id === 10000);
+  assert.deepEqual(
+    iframeRule.action.requestHeaders.find((header) => header.header === "referer"),
+    {
+      header: "referer",
+      operation: "set",
+      value: "https://chatgpt.com/c/69f8da25-a54c-832d-9efd-db2af34e14c0",
+    },
+  );
+});
+
 test("clears every rewrite when no top-level tab matches the whitelist", async () => {
+  clearChatGptFrameReferers();
   const calls = [];
   const chrome = {
     storage: {
