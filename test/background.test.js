@@ -223,6 +223,64 @@ test("installs every rewrite as session rules only for whitelisted tabs", async 
   ]);
 });
 
+test("includes domain-scoped Cloudflare cookies when ChatGPT url cookies exist", async () => {
+  clearChatGptFrameReferers();
+  const calls = [];
+  const chrome = {
+    storage: {
+      local: {
+        async get(defaults) {
+          return { ...defaults, urlPatterns: ["http://localhost:8080/"] };
+        },
+      },
+    },
+    cookies: {
+      async getAll(query) {
+        if (query.url === "https://chatgpt.com/") {
+          return [{ name: "session", value: "abc" }];
+        }
+
+        if (query.domain === "chatgpt.com") {
+          return [{ name: "__cf_bm", value: "cloudflare" }];
+        }
+
+        return [];
+      },
+    },
+    tabs: {
+      async query() {
+        return [{ id: 11, url: "http://localhost:8080/" }];
+      },
+    },
+    declarativeNetRequest: {
+      async getDynamicRules() {
+        return [];
+      },
+      async updateDynamicRules(details) {
+        calls.push(["updateDynamicRules", details]);
+      },
+      async getSessionRules() {
+        return [];
+      },
+      async updateSessionRules(details) {
+        calls.push(["updateSessionRules", details]);
+      },
+    },
+  };
+
+  await refreshRules(chrome);
+
+  const iframeRule = calls.at(-1)[1].addRules.find((rule) => rule.id === 10000);
+  assert.deepEqual(
+    iframeRule.action.requestHeaders.find((header) => header.header === "cookie"),
+    {
+      header: "cookie",
+      operation: "set",
+      value: "session=abc; __cf_bm=cloudflare",
+    },
+  );
+});
+
 test("updates the tab-scoped ChatGPT referer from the reported iframe url", async () => {
   clearChatGptFrameReferers();
   const calls = [];

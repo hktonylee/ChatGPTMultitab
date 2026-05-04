@@ -44,13 +44,26 @@ async function clearDynamicRules(extensionChrome = chrome) {
 
 async function getChatGptCookieHeader(extensionChrome = chrome) {
   const cookies = await extensionChrome.cookies.getAll({ url: CHATGPT_COOKIE_URL });
+  const domainCookies = await extensionChrome.cookies.getAll({ domain: CHATGPT_COOKIE_DOMAIN });
+  const seenCookies = new Set();
+  const chatGptCookies = [];
 
-  if (cookies.length > 0) {
-    return XfoRuleBuilder.buildChatGptCookieHeader(cookies);
+  for (const cookie of [...cookies, ...domainCookies]) {
+    const cookieKey = [
+      cookie?.name || "",
+      cookie?.domain || "",
+      cookie?.path || "",
+    ].join("\n");
+
+    if (seenCookies.has(cookieKey)) {
+      continue;
+    }
+
+    seenCookies.add(cookieKey);
+    chatGptCookies.push(cookie);
   }
 
-  const domainCookies = await extensionChrome.cookies.getAll({ domain: CHATGPT_COOKIE_DOMAIN });
-  return XfoRuleBuilder.buildChatGptCookieHeader(domainCookies);
+  return XfoRuleBuilder.buildChatGptCookieHeader(chatGptCookies);
 }
 
 async function getWhitelistedTabIds(patterns, extensionChrome = chrome) {
