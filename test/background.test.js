@@ -192,8 +192,8 @@ test("installs every rewrite as session rules only for whitelisted tabs", async 
                 { header: "sec-fetch-mode", operation: "remove" },
                 { header: "sec-fetch-site", operation: "remove" },
                 { header: "sec-fetch-user", operation: "remove" },
-                { header: "referer", operation: "remove" },
-                { header: "origin", operation: "remove" },
+                { header: "origin", operation: "set", value: "https://chatgpt.com" },
+                { header: "referer", operation: "set", value: "https://chatgpt.com/" },
                 { header: "cookie", operation: "set", value: "session=abc" },
               ],
               responseHeaders: [

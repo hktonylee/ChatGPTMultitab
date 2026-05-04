@@ -61,8 +61,8 @@ test("builds a chatgpt.com iframe access rule", () => {
         { header: "sec-fetch-mode", operation: "remove" },
         { header: "sec-fetch-site", operation: "remove" },
         { header: "sec-fetch-user", operation: "remove" },
-        { header: "referer", operation: "remove" },
-        { header: "origin", operation: "remove" },
+        { header: "origin", operation: "set", value: "https://chatgpt.com" },
+        { header: "referer", operation: "set", value: "https://chatgpt.com/" },
       ],
       responseHeaders: [
         { header: "x-frame-options", operation: "remove" },
@@ -91,8 +91,8 @@ test("builds a chatgpt.com iframe access rule with an injected cookie header", (
           { header: "sec-fetch-mode", operation: "remove" },
           { header: "sec-fetch-site", operation: "remove" },
           { header: "sec-fetch-user", operation: "remove" },
-          { header: "referer", operation: "remove" },
-          { header: "origin", operation: "remove" },
+          { header: "origin", operation: "set", value: "https://chatgpt.com" },
+          { header: "referer", operation: "set", value: "https://chatgpt.com/" },
           { header: "cookie", operation: "set", value: "a=1; b=two" },
         ],
         responseHeaders: [
