@@ -31,12 +31,15 @@ test("open-chat-in-browser-tab control is pinned to the right edge of the tab ba
   assert.match(html, /\.open-tab\s*\{[^}]*margin-left:\s*auto;/s);
 });
 
-test("workspace renders a restore-closed-tab control beside the browser-tab button", () => {
+test("workspace renders new-tab and reopen-closed-tab actions inside the plus menu", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
-  assert.match(html, /class="toolbar-button restore-tab"/);
-  assert.match(html, /aria-label="Restore most recently closed chat tab"/);
-  assert.match(html, /title="Restore most recently closed chat tab"/);
+  assert.match(html, /class="add-tab-menu"/);
+  assert.match(html, /aria-haspopup="menu"/);
+  assert.match(html, /<div class="tab-action-menu" id="new-tab-menu" role="menu" hidden>/);
+  assert.match(html, /class="tab-menu-item new-tab-menu-item"[^>]*>\s*New tab\s*<\/button>/s);
+  assert.match(html, /class="tab-menu-item reopen-tab-menu-item"[^>]*>\s*Reopen closed tab\s*<\/button>/s);
+  assert.equal(html.includes('class="toolbar-button restore-tab"'), false);
 });
 
 test("workspace keeps one preloaded chat tab ready in the background", () => {
@@ -84,14 +87,16 @@ test("workspace asks a new chat tab to focus the Ask anything prompt", () => {
 test("workspace persists and restores a closed tab stack in reverse close order", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
-  assert.match(html, /const restoreTabButton = document\.querySelector\('\.restore-tab'\);/);
+  assert.match(html, /const reopenTabMenuItem = document\.querySelector\('\.reopen-tab-menu-item'\);/);
   assert.match(html, /closedTabs:\s*getClosedTabs\(\)/);
   assert.match(html, /function updateRestoreTabButtonState\(\)/);
-  assert.match(html, /restoreTabButton\.disabled = getClosedTabs\(\)\.length === 0;/);
+  assert.match(html, /reopenTabMenuItem\.disabled = getClosedTabs\(\)\.length === 0;/);
   assert.match(html, /closedTabs\.push\(\{\s*id:/s);
   assert.match(html, /function restoreClosedTab\(\)/);
   assert.match(html, /const tabState = getClosedTabs\(\)\.pop\(\);/);
-  assert.match(html, /event\.target\.closest\('\.restore-tab'\)\)\s*\{\s*restoreClosedTab\(\);/s);
+  assert.match(html, /function openNewTabMenu\(\)/);
+  assert.match(html, /function closeNewTabMenu\(\)/);
+  assert.match(html, /event\.target\.closest\('\.reopen-tab-menu-item'\)\)\s*\{\s*restoreClosedTab\(\);/s);
 });
 
 test("workspace reloads only the latest five restored iframes and sleeps the rest", () => {

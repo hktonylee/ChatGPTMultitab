@@ -91,6 +91,7 @@
 
       .tab:focus-visible,
       .add-tab:focus-visible,
+      .tab-menu-item:focus-visible,
       .toolbar-button:focus-visible {
         outline: 3px solid color-mix(in oklch, var(--focus), transparent 62%);
         outline-offset: 2px;
@@ -108,6 +109,12 @@
           0 1px 0 var(--panel);
       }
 
+      .add-tab-menu {
+        position: relative;
+        display: flex;
+        align-items: end;
+      }
+
       .add-tab {
         width: 1.8rem;
         height: 1.55rem;
@@ -119,6 +126,53 @@
         font: inherit;
         font-size: 1rem;
         line-height: 1;
+      }
+
+      .tab-action-menu {
+        position: fixed;
+        top: var(--new-tab-menu-top, 2rem);
+        left: var(--new-tab-menu-left, 0.35rem);
+        z-index: 10;
+        display: grid;
+        min-width: 9.5rem;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--panel);
+        box-shadow: 0 0.35rem 1.2rem color-mix(in oklch, var(--ink), transparent 84%);
+        padding: 0.2rem;
+      }
+
+      .tab-action-menu[hidden] {
+        display: none;
+      }
+
+      .tab-menu-item {
+        border: 0;
+        border-radius: 4px;
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 0.45rem 0.55rem;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .tab-menu-item:hover {
+        background: color-mix(in oklch, var(--panel), var(--page) 42%);
+      }
+
+      .tab-menu-item:disabled {
+        color: var(--muted);
+        cursor: default;
+        opacity: 0.55;
+      }
+
+      .tab-menu-item:disabled:hover {
+        background: transparent;
       }
 
       .toolbar-button {
@@ -194,8 +248,13 @@
         <button class="tab" id="tab-chat-1" role="tab" aria-selected="true" aria-controls="panel-chat-1" type="button">
           Chat 1
         </button>
-        <button class="add-tab" type="button" aria-label="New chat tab">+</button>
-        <button class="toolbar-button restore-tab" type="button" aria-label="Restore most recently closed chat tab" title="Restore most recently closed chat tab" disabled>&#8630;</button>
+        <span class="add-tab-menu">
+          <button class="add-tab" type="button" aria-label="New chat tab" aria-haspopup="menu" aria-expanded="false" aria-controls="new-tab-menu">+</button>
+          <div class="tab-action-menu" id="new-tab-menu" role="menu" hidden>
+            <button class="tab-menu-item new-tab-menu-item" type="button" role="menuitem">New tab</button>
+            <button class="tab-menu-item reopen-tab-menu-item" type="button" role="menuitem" disabled>Reopen closed tab</button>
+          </div>
+        </span>
         <button class="toolbar-button open-tab" type="button" aria-label="Open active chat in new browser tab" title="Open active chat in new browser tab">&#8599;</button>
       </nav>
 
@@ -343,13 +402,19 @@
       const RESTORED_IFRAME_LIMIT = 5;
       const AUTO_SLEEP_AFTER_MS = 3 * 60 * 60 * 1000;
       const AUTO_SLEEP_CHECK_INTERVAL_MS = 60 * 1000;
+      const NEW_TAB_MENU_HOLD_MS = 450;
       const tabList = document.querySelector('[role="tablist"]');
+      const addTabMenu = document.querySelector('.add-tab-menu');
       const addTabButton = document.querySelector('.add-tab');
-      const restoreTabButton = document.querySelector('.restore-tab');
+      const newTabMenu = document.querySelector('#new-tab-menu');
+      const newTabMenuItem = document.querySelector('.new-tab-menu-item');
+      const reopenTabMenuItem = document.querySelector('.reopen-tab-menu-item');
       const main = document.querySelector('main');
       let nextTabId = 2;
       let cachedChatTab = null;
       let closedTabs = [];
+      let newTabMenuHoldTimer = 0;
+      let didOpenNewTabMenuFromPress = false;
 
       function getTabs() {
         return [...document.querySelectorAll('[role="tab"]')];
@@ -554,14 +619,14 @@
         delete panel.dataset.preloadedChatTab;
         const tab = createTabButton(tabState);
         panel.setAttribute('aria-labelledby', tab.id);
-        tabList.insertBefore(tab, addTabButton);
+        tabList.insertBefore(tab, addTabMenu);
 
         ensureCachedChatTab();
         return tab;
       }
 
       function updateRestoreTabButtonState() {
-        restoreTabButton.disabled = getClosedTabs().length === 0;
+        reopenTabMenuItem.disabled = getClosedTabs().length === 0;
       }
 
       function persistSession() {
@@ -598,7 +663,7 @@
         panel.setAttribute('aria-labelledby', tab.id);
 
         markSleepingTab(tab, !loadIframe);
-        tabList.insertBefore(tab, addTabButton);
+        tabList.insertBefore(tab, addTabMenu);
         main.append(panel);
 
         return tab;
@@ -729,6 +794,49 @@
         activateTab(tab);
       }
 
+      function isNewTabMenuOpen() {
+        return !newTabMenu.hidden;
+      }
+
+      function positionNewTabMenu() {
+        const rect = addTabButton.getBoundingClientRect();
+        newTabMenu.style.setProperty('--new-tab-menu-left', `${rect.left}px`);
+        newTabMenu.style.setProperty('--new-tab-menu-top', `${rect.bottom + 4}px`);
+      }
+
+      function openNewTabMenu() {
+        updateRestoreTabButtonState();
+        positionNewTabMenu();
+        newTabMenu.hidden = false;
+        addTabButton.setAttribute('aria-expanded', 'true');
+        newTabMenuItem.focus();
+      }
+
+      function closeNewTabMenu() {
+        window.clearTimeout(newTabMenuHoldTimer);
+        newTabMenuHoldTimer = 0;
+        newTabMenu.hidden = true;
+        addTabButton.setAttribute('aria-expanded', 'false');
+      }
+
+      function startNewTabMenuHold(event) {
+        if (event.button !== 0) {
+          return;
+        }
+
+        window.clearTimeout(newTabMenuHoldTimer);
+        didOpenNewTabMenuFromPress = false;
+        newTabMenuHoldTimer = window.setTimeout(() => {
+          didOpenNewTabMenuFromPress = true;
+          openNewTabMenu();
+        }, NEW_TAB_MENU_HOLD_MS);
+      }
+
+      function finishNewTabMenuHold() {
+        window.clearTimeout(newTabMenuHoldTimer);
+        newTabMenuHoldTimer = 0;
+      }
+
       function handleWorkspaceShortcut(action) {
         if (action === 'new-tab') {
           addChatTab();
@@ -820,13 +928,30 @@
           return;
         }
 
-        if (event.target.closest('.add-tab')) {
+        if (event.target.closest('.new-tab-menu-item')) {
           addChatTab();
+          closeNewTabMenu();
           return;
         }
 
-        if (event.target.closest('.restore-tab')) {
+        if (event.target.closest('.reopen-tab-menu-item')) {
           restoreClosedTab();
+          closeNewTabMenu();
+          return;
+        }
+
+        if (event.target.closest('.add-tab')) {
+          if (didOpenNewTabMenuFromPress) {
+            didOpenNewTabMenuFromPress = false;
+            return;
+          }
+
+          if (isNewTabMenuOpen()) {
+            closeNewTabMenu();
+            return;
+          }
+
+          addChatTab();
           return;
         }
 
@@ -834,6 +959,36 @@
           openActiveFrameInBrowserTab();
         }
       });
+
+      addTabButton.addEventListener('pointerdown', startNewTabMenuHold);
+      addTabButton.addEventListener('pointerup', finishNewTabMenuHold);
+      addTabButton.addEventListener('pointerleave', () => {
+        window.clearTimeout(newTabMenuHoldTimer);
+        newTabMenuHoldTimer = 0;
+      });
+      addTabButton.addEventListener('pointercancel', closeNewTabMenu);
+
+      addTabButton.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          openNewTabMenu();
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!addTabMenu.contains(event.target)) {
+          closeNewTabMenu();
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeNewTabMenu();
+          addTabButton.focus();
+        }
+      });
+
+      window.addEventListener('resize', closeNewTabMenu);
 
       tabList.addEventListener('auxclick', (event) => {
         const tab = event.target.closest('[role="tab"]');
