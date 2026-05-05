@@ -108,3 +108,18 @@ test("workspace reloads only the latest five restored iframes and sleeps the res
   assert.match(html, /createChatTab\(tabState,\s*\{\s*loadIframe:\s*index >= firstLoadedTabIndex/s);
   assert.match(html, /wakeSleepingTab\(tab\);[\s\S]*const tabs = getTabs\(\);/);
 });
+
+test("workspace unloads iframes after three inactive hours and wakes them on activation", () => {
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+
+  assert.match(html, /const AUTO_SLEEP_AFTER_MS = 3 \* 60 \* 60 \* 1000;/);
+  assert.match(html, /const AUTO_SLEEP_CHECK_INTERVAL_MS = 60 \* 1000;/);
+  assert.match(html, /function sleepChatPanel\(tab,\s*panel\)/);
+  assert.match(html, /panel\.dataset\.sleepingChatUrl =[\s\S]*iframe\?\.dataset\.reportedChatUrl/s);
+  assert.match(html, /iframe\.remove\(\);/);
+  assert.match(html, /function sleepInactiveTabs\(now = Date\.now\(\)\)/);
+  assert.match(html, /tab\.getAttribute\('aria-selected'\) === 'true'/);
+  assert.match(html, /now - lastActiveAt < AUTO_SLEEP_AFTER_MS/);
+  assert.match(html, /window\.setInterval\(sleepInactiveTabs,\s*AUTO_SLEEP_CHECK_INTERVAL_MS\);/);
+  assert.match(html, /tab\.dataset\.lastActiveAt = String\(Date\.now\(\)\);[\s\S]*wakeSleepingTab\(tab\);/);
+});
