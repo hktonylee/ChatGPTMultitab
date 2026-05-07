@@ -13,24 +13,13 @@ test("chatgpt content script forwards workspace keyboard shortcuts to the parent
   assert.match(source, /document\.addEventListener\("keydown", postWorkspaceShortcutToParent\);/);
 });
 
-test("chatgpt content script focuses the Ask anything prompt when the workspace asks", () => {
+test("chatgpt content script does not try to focus the Ask anything prompt", () => {
   const source = fs.readFileSync(path.join(__dirname, "..", "src", "chatgpt-location.js"), "utf8");
 
-  assert.match(source, /function findAskAnythingInput\(\)/);
-  assert.match(source, /Ask anything/);
-  assert.match(source, /function focusAskAnythingInput\(\)/);
-  assert.match(source, /type !== "focus-chat-prompt"/);
-  assert.match(source, /window\.addEventListener\("message", handleWorkspaceMessage\);/);
-});
-
-test("chatgpt content script observes the Ask anything placeholder until it can focus", () => {
-  const source = fs.readFileSync(path.join(__dirname, "..", "src", "chatgpt-location.js"), "utf8");
-
-  assert.match(source, /\[data-placeholder\*="Ask anything" i\]\.placeholder/);
-  assert.match(source, /function observeAskAnythingInput\(\)/);
-  assert.match(source, /new MutationObserver/);
-  assert.match(source, /observer\.disconnect\(\);/);
-  assert.match(source, /observeAskAnythingInput\(\);/);
+  assert.doesNotMatch(source, /focus-chat-prompt/);
+  assert.doesNotMatch(source, /Ask anything/);
+  assert.doesNotMatch(source, /handleWorkspaceMessage/);
+  assert.doesNotMatch(source, /window\.addEventListener\("message"/);
 });
 
 test("chatgpt content script reports iframe url to the extension background", () => {

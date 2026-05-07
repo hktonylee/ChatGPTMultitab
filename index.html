@@ -459,28 +459,6 @@
         window.open(url, '_blank', 'noopener');
       }
 
-      function focusChatPrompt(tab) {
-        const iframe = getPanelForTab(tab)?.querySelector('iframe');
-
-        if (!iframe?.contentWindow) {
-          return;
-        }
-
-        const postFocusRequest = () => {
-          iframe.contentWindow.postMessage(
-            {
-              source: 'chatgpt-multitab',
-              type: 'focus-chat-prompt',
-            },
-            'https://chatgpt.com',
-          );
-        };
-
-        postFocusRequest();
-        window.setTimeout(postFocusRequest, 150);
-        window.setTimeout(postFocusRequest, 500);
-      }
-
       function getTabId(tab) {
         return Number(tab?.dataset.chatId || tab?.id.replace('tab-chat-', ''));
       }
@@ -742,7 +720,6 @@
         if (url === SessionState.DEFAULT_CHAT_URL) {
           const tab = promoteCachedChatTab();
           activateTab(tab);
-          focusChatPrompt(tab);
           return;
         }
 
@@ -751,7 +728,6 @@
         );
         nextTabId += 1;
         activateTab(tab);
-        focusChatPrompt(tab);
       }
 
       function closeTab(tab) {

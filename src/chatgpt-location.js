@@ -1,6 +1,5 @@
 let lastReportedPayload = "";
 let scheduledReport = 0;
-let askAnythingFocusObserver = null;
 
 function getCandidateChatUrls() {
   return [...document.querySelectorAll("a[href]")]
@@ -106,98 +105,6 @@ function postWorkspaceShortcutToParent(event) {
   );
 }
 
-function findAskAnythingInput() {
-  const selectors = [
-    'textarea[placeholder*="Ask anything" i]',
-    'textarea[aria-label*="Ask anything" i]',
-    '[contenteditable="true"][aria-label*="Ask anything" i]',
-    '[contenteditable="true"][data-placeholder*="Ask anything" i]',
-    '[data-placeholder*="Ask anything" i].placeholder',
-    '#prompt-textarea',
-  ];
-
-  for (const selector of selectors) {
-    const input = document.querySelector(selector);
-
-    if (input) {
-      return input.closest('[contenteditable="true"]') || input;
-    }
-  }
-
-  return null;
-}
-
-function focusAskAnythingInput() {
-  const input = findAskAnythingInput();
-
-  if (!input) {
-    return false;
-  }
-
-  input.focus({ preventScroll: false });
-  input.click();
-  return true;
-}
-
-function stopObservingAskAnythingInput() {
-  askAnythingFocusObserver?.disconnect();
-  askAnythingFocusObserver = null;
-}
-
-function observeAskAnythingInput() {
-  if (askAnythingFocusObserver || focusAskAnythingInput()) {
-    return;
-  }
-
-  const root = document.body || document.documentElement;
-
-  if (!root) {
-    return;
-  }
-
-  const observer = new MutationObserver(() => {
-    if (!focusAskAnythingInput()) {
-      return;
-    }
-
-    observer.disconnect();
-    askAnythingFocusObserver = null;
-  });
-
-  askAnythingFocusObserver = observer;
-  askAnythingFocusObserver.observe(root, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["aria-label", "class", "contenteditable", "data-placeholder", "placeholder"],
-  });
-
-  window.setTimeout(stopObservingAskAnythingInput, 5000);
-}
-
-function focusAskAnythingInputWithRetry(attempts = 8) {
-  if (focusAskAnythingInput() || attempts <= 1) {
-    return;
-  }
-
-  window.setTimeout(() => {
-    focusAskAnythingInputWithRetry(attempts - 1);
-  }, 150);
-}
-
-function handleWorkspaceMessage(event) {
-  if (window.parent === window || event.source !== window.parent) {
-    return;
-  }
-
-  if (event.data?.source !== "chatgpt-multitab" || event.data.type !== "focus-chat-prompt") {
-    return;
-  }
-
-  focusAskAnythingInputWithRetry();
-  observeAskAnythingInput();
-}
-
 installHistoryReporter();
 installDomObserver();
 
@@ -205,7 +112,6 @@ window.addEventListener("hashchange", scheduleLocationReport);
 window.addEventListener("popstate", scheduleLocationReport);
 window.addEventListener("load", scheduleLocationReport);
 window.addEventListener("pageshow", scheduleLocationReport);
-window.addEventListener("message", handleWorkspaceMessage);
 document.addEventListener("visibilitychange", scheduleLocationReport);
 document.addEventListener("keydown", postWorkspaceShortcutToParent);
 

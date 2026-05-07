@@ -76,12 +76,12 @@ test("workspace handles keyboard shortcuts for creating and switching tabs", () 
   assert.match(html, /handleWorkspaceShortcut\(event\.data\.action\);/);
 });
 
-test("workspace asks a new chat tab to focus the Ask anything prompt", () => {
+test("workspace does not ask new chat tabs to focus the iframe prompt", () => {
   const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
-  assert.match(html, /function focusChatPrompt\(tab\)/);
-  assert.match(html, /type:\s*'focus-chat-prompt'/);
-  assert.match(html, /focusChatPrompt\(tab\);\s*return;/);
+  assert.doesNotMatch(html, /function focusChatPrompt\(tab\)/);
+  assert.doesNotMatch(html, /focus-chat-prompt/);
+  assert.doesNotMatch(html, /focusChatPrompt\(tab\);/);
 });
 
 test("workspace persists and restores a closed tab stack in reverse close order", () => {
