@@ -57,6 +57,24 @@ test("sanitizes stored tab session state", () => {
   );
 });
 
+test("preserves unloaded state for open tabs", () => {
+  assert.deepEqual(
+    sanitizeStoredTabState({
+      activeTabId: 4,
+      tabs: [
+        { id: 4, title: "Loaded", url: "https://chatgpt.com/c/loaded" },
+        { id: 5, title: "Unloaded", url: "https://chatgpt.com/c/unloaded", isUnloaded: true },
+        { id: 6, title: "False", url: "https://chatgpt.com/c/false", isUnloaded: false },
+      ],
+    }).tabs,
+    [
+      { id: 4, title: "Loaded", url: "https://chatgpt.com/c/loaded" },
+      { id: 5, title: "Unloaded", url: "https://chatgpt.com/c/unloaded", isUnloaded: true },
+      { id: 6, title: "False", url: "https://chatgpt.com/c/false" },
+    ],
+  );
+});
+
 test("falls back to an empty closed tab stack when stored closed tabs are unusable", () => {
   assert.deepEqual(
     sanitizeStoredTabState({

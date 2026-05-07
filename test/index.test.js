@@ -110,8 +110,18 @@ test("workspace reloads only the latest five restored iframes and sleeps the res
   assert.match(html, /tab\.dataset\.sleeping = 'true';/);
   assert.match(html, /panel\?\.dataset\.sleepingChatUrl\s*\|\|/);
   assert.match(html, /session\.tabs\.length - RESTORED_IFRAME_LIMIT/);
-  assert.match(html, /createChatTab\(tabState,\s*\{\s*loadIframe:\s*index >= firstLoadedTabIndex/s);
+  assert.match(
+    html,
+    /createChatTab\(tabState,\s*\{\s*loadIframe:\s*!tabState\.isUnloaded && index >= firstLoadedTabIndex/s,
+  );
   assert.match(html, /wakeSleepingTab\(tab\);[\s\S]*const tabs = getTabs\(\);/);
+});
+
+test("workspace keeps explicitly unloaded tabs unloaded after refresh", () => {
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+
+  assert.match(html, /isUnloaded:\s*!iframe && Boolean\(panel\?\.dataset\.sleepingChatUrl\),/);
+  assert.match(html, /loadIframe:\s*!tabState\.isUnloaded && index >= firstLoadedTabIndex/);
 });
 
 test("workspace unloads iframes after three inactive hours and wakes them on activation", () => {

@@ -3,15 +3,20 @@
   const DEFAULT_CHAT_TITLE = "ChatGPT";
   const CHATGPT_HOSTNAME = "chatgpt.com";
 
-  function createTabState(id, title = DEFAULT_CHAT_TITLE, url = DEFAULT_CHAT_URL) {
+  function createTabState(id, title = DEFAULT_CHAT_TITLE, url = DEFAULT_CHAT_URL, options = {}) {
     const numericId = Number(id);
     const normalizedTitle = String(title || "").trim() || DEFAULT_CHAT_TITLE;
-
-    return {
+    const tabState = {
       id: numericId,
       title: normalizedTitle,
       url: normalizeTabUrl(url),
     };
+
+    if (options.isUnloaded === true) {
+      tabState.isUnloaded = true;
+    }
+
+    return tabState;
   }
 
   function buildInitialTabState() {
@@ -65,7 +70,9 @@
           return null;
         }
 
-        return createTabState(id, tab?.title, tab?.url);
+        return createTabState(id, tab?.title, tab?.url, {
+          isUnloaded: tab?.isUnloaded === true,
+        });
       })
       .filter(Boolean);
 

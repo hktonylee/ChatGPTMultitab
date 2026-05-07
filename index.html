@@ -271,15 +271,20 @@
   const DEFAULT_CHAT_TITLE = "ChatGPT";
   const CHATGPT_HOSTNAME = "chatgpt.com";
 
-  function createTabState(id, title = DEFAULT_CHAT_TITLE, url = DEFAULT_CHAT_URL) {
+  function createTabState(id, title = DEFAULT_CHAT_TITLE, url = DEFAULT_CHAT_URL, options = {}) {
     const numericId = Number(id);
     const normalizedTitle = String(title || "").trim() || DEFAULT_CHAT_TITLE;
-
-    return {
+    const tabState = {
       id: numericId,
       title: normalizedTitle,
       url: normalizeTabUrl(url),
     };
+
+    if (options.isUnloaded === true) {
+      tabState.isUnloaded = true;
+    }
+
+    return tabState;
   }
 
   function buildInitialTabState() {
@@ -333,7 +338,9 @@
           return null;
         }
 
-        return createTabState(id, tab?.title, tab?.url);
+        return createTabState(id, tab?.title, tab?.url, {
+          isUnloaded: tab?.isUnloaded === true,
+        });
       })
       .filter(Boolean);
 
@@ -637,6 +644,7 @@
           return {
             id: getTabId(tab),
             title: tab.textContent.trim(),
+            isUnloaded: !iframe && Boolean(panel?.dataset.sleepingChatUrl),
             url:
               iframe?.dataset.reportedChatUrl ||
               iframe?.dataset.currentUrl ||
@@ -683,7 +691,7 @@
 
         const firstLoadedTabIndex = Math.max(session.tabs.length - RESTORED_IFRAME_LIMIT, 0);
         const restoredTabs = session.tabs.map((tabState, index) =>
-          createChatTab(tabState, { loadIframe: index >= firstLoadedTabIndex }),
+          createChatTab(tabState, { loadIframe: !tabState.isUnloaded && index >= firstLoadedTabIndex }),
         );
         const activeTab =
           restoredTabs.find((tab) => getTabId(tab) === session.activeTabId) || restoredTabs[0];
