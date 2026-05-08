@@ -1,5 +1,5 @@
 DIST_DIR := dist
-PACKAGE_NAME := chatgpt-multitab-system
+PACKAGE_NAME := chatgpt-multitab
 PACKAGE_ZIP := $(DIST_DIR)/$(PACKAGE_NAME).zip
 PACKAGE_FILES := \
 	manifest.json \
