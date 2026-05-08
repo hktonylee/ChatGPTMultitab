@@ -59,7 +59,6 @@ test("repo no longer ships Chrome extension or Worker build code", () => {
   const removedPaths = [
     "manifest.json",
     "options.html",
-    "Makefile",
     "src/background.js",
     "src/options.js",
     "src/rules.js",
@@ -78,6 +77,16 @@ test("repo no longer ships Chrome extension or Worker build code", () => {
     packageJson.scripts.check,
     "node --check src/session-state.js && node --check src/electron-tabs.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js",
   );
+});
+
+test("Makefile can create a Windows code-signing certificate", () => {
+  const makefile = readRepoFile("Makefile");
+
+  assert.match(makefile, /\.PHONY: windows-code-sign-cert/);
+  assert.match(makefile, /New-SelfSignedCertificate/);
+  assert.match(makefile, /-Type CodeSigningCert/);
+  assert.match(makefile, /Export-PfxCertificate/);
+  assert.match(makefile, /CSC_LINK=.*CSC_KEY_PASSWORD=.*npm run dist:win/);
 });
 
 test("renderer shell is a multitab UI without iframe-hosted ChatGPT pages", () => {
