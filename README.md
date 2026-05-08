@@ -4,7 +4,7 @@
 
 2026-05-08: Changed from a Chrome plugin into an Electron app.
 
-It keeps multiple ChatGPT pages in one desktop window. Each ChatGPT tab is a real Electron `WebContentsView`, not an iframe, so the app avoids the frame-header and embedded-page issues from the earlier browser-extension version.
+It keeps multiple ChatGPT pages in one desktop window. Each ChatGPT tab runs as a real Electron web contents view.
 
 ![ChatGPT Multitab screenshot](docs/Screen1.png)
 
@@ -12,7 +12,7 @@ It keeps multiple ChatGPT pages in one desktop window. Each ChatGPT tab is a rea
 
 - Opens ChatGPT in a dedicated desktop window.
 - Keeps multiple ChatGPT conversations available as workspace tabs.
-- Wraps each ChatGPT page with `WebContentsView` instead of iframe embedding.
+- Runs each ChatGPT page in an Electron web contents view.
 - Persists open and recently closed tabs in Electron user data.
 - Supports `Ctrl+T` or `Cmd+T` for a new tab, `Ctrl+W` or `Cmd+W` to close the active tab, and `Ctrl+Tab` / `Ctrl+Shift+Tab` or `Cmd+Tab` / `Cmd+Shift+Tab` for tab switching.
 
