@@ -89,6 +89,19 @@ test("Makefile can create a Windows code-signing certificate", () => {
   assert.match(makefile, /CSC_LINK=.*CSC_KEY_PASSWORD=.*npm run dist:win/);
 });
 
+test("Makefile can sign a Windows executable with the generated certificate", () => {
+  const makefile = readRepoFile("Makefile");
+
+  assert.match(makefile, /\.PHONY: windows-sign-exe/);
+  assert.match(makefile, /WINDOWS_SIGN_EXE/);
+  assert.match(makefile, /signtool\.exe/);
+  assert.match(makefile, /Export-PfxCertificate/);
+  assert.match(makefile, /\/f/);
+  assert.match(makefile, /\/p/);
+  assert.match(makefile, /'\/fd', 'SHA256'/);
+  assert.match(makefile, /'\/td', 'SHA256'/);
+});
+
 test("renderer shell is a multitab UI without iframe-hosted ChatGPT pages", () => {
   const rendererHtml = readRepoFile("electron", "renderer.html");
   const rendererSource = readRepoFile("electron", "renderer.js");
