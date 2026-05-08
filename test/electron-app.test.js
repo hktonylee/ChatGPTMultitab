@@ -265,6 +265,63 @@ test("electron tab controller focuses the visible WebContentsView when the activ
   assert.equal(focusedViews.at(-1), secondTab.view);
 });
 
+test("electron tab controller replaces the last closed tab with a new default tab", () => {
+  const { createElectronTabController, DEFAULT_CHAT_URL } = require("../src/electron-tabs");
+
+  const attachedViews = [];
+  const closedViews = [];
+  const loadedUrls = [];
+  const contentView = {
+    addChildView(view) {
+      attachedViews.push(view);
+    },
+    removeChildView(view) {
+      const index = attachedViews.indexOf(view);
+      if (index >= 0) {
+        attachedViews.splice(index, 1);
+      }
+    },
+  };
+
+  function createView() {
+    const view = {
+      setBounds() {},
+      webContents: {
+        loadURL(url) {
+          loadedUrls.push(url);
+        },
+        on() {},
+        close() {
+          closedViews.push(view);
+        },
+      },
+    };
+
+    return view;
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const closedTab = controller.getActiveTab();
+  const result = controller.closeTab(closedTab.id);
+  const state = controller.getState();
+
+  assert.equal(result.id, closedTab.id);
+  assert.equal(closedViews[0], closedTab.view);
+  assert.deepEqual(state.closedTabs, [
+    {
+      id: closedTab.id,
+      title: "ChatGPT",
+      url: DEFAULT_CHAT_URL,
+    },
+  ]);
+  assert.equal(state.tabs.length, 1);
+  assert.equal(state.tabs[0].id, closedTab.id + 1);
+  assert.equal(state.activeTabId, state.tabs[0].id);
+  assert.equal(loadedUrls.at(-1), DEFAULT_CHAT_URL);
+  assert.equal(attachedViews.length, 1);
+  assert.equal(attachedViews[0], controller.getActiveTab().view);
+});
+
 test("electron tab controller handles webContents shortcuts before window defaults", () => {
   const { createElectronTabController } = require("../src/electron-tabs");
 

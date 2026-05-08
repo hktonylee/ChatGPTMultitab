@@ -124,6 +124,10 @@ function createElectronTabController({
     return tab;
   }
 
+  function createDefaultTab() {
+    return createManagedTab(createTabState(nextTabId, DEFAULT_CHAT_TITLE, DEFAULT_CHAT_URL));
+  }
+
   function loadInitialState(state) {
     const session = sanitizeStoredTabState(state);
     closedTabs = session.closedTabs;
@@ -166,10 +170,6 @@ function createElectronTabController({
     },
 
     closeTab(id) {
-      if (tabs.length <= 1) {
-        return null;
-      }
-
       const index = tabs.findIndex((tab) => tab.id === Number(id));
 
       if (index < 0) {
@@ -187,7 +187,13 @@ function createElectronTabController({
       tab.view.webContents?.close?.();
 
       if (activeTabId === tab.id) {
-        const nextTab = tabs[index] || tabs[index - 1] || tabs[0];
+        let nextTab = tabs[index] || tabs[index - 1] || tabs[0];
+
+        if (!nextTab) {
+          nextTab = createDefaultTab();
+          tabs.push(nextTab);
+        }
+
         activeTabId = nextTab.id;
         attachView(nextTab);
       }
