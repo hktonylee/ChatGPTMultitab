@@ -6,6 +6,8 @@
 
 It keeps multiple ChatGPT pages in one desktop window. Each ChatGPT tab is a real Electron `WebContentsView`, not an iframe, so the app avoids the frame-header and embedded-page issues from the earlier browser-extension version.
 
+![ChatGPT Multitab screenshot](docs/Screen1.png)
+
 ## What it does
 
 - Opens ChatGPT in a dedicated desktop window.
