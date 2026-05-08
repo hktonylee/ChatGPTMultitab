@@ -9,14 +9,14 @@ WINDOWS_SIGN_TIMESTAMP_URL ?= http://timestamp.digicert.com
 windows-code-sign-cert:
 	@mkdir -p "$(WINDOWS_CERT_DIR)"
 	@powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "\
-		$$ErrorActionPreference = 'Stop'; \
-		$$certPath = '$(WINDOWS_CERT_PFX)'; \
-		$$passwordPath = '$(WINDOWS_CERT_PASSWORD_FILE)'; \
-		if (Test-Path $$certPath) { throw \"Certificate already exists: $$certPath\" }; \
-		if (Test-Path $$passwordPath) { throw \"Password file already exists: $$passwordPath\" }; \
-		$$password = [System.Web.Security.Membership]::GeneratePassword(32, 8); \
-		$$securePassword = ConvertTo-SecureString -String $$password -Force -AsPlainText; \
-		$$cert = New-SelfSignedCertificate \
+		\$$ErrorActionPreference = 'Stop'; \
+		\$$certPath = '$(WINDOWS_CERT_PFX)'; \
+		\$$passwordPath = '$(WINDOWS_CERT_PASSWORD_FILE)'; \
+		if (Test-Path \$$certPath) { throw \"Certificate already exists: \$$certPath\" }; \
+		if (Test-Path \$$passwordPath) { throw \"Password file already exists: \$$passwordPath\" }; \
+		\$$password = [System.Web.Security.Membership]::GeneratePassword(32, 8); \
+		\$$securePassword = ConvertTo-SecureString -String \$$password -Force -AsPlainText; \
+		\$$cert = New-SelfSignedCertificate \
 			-Type CodeSigningCert \
 			-Subject 'CN=$(WINDOWS_CERT_NAME)' \
 			-CertStoreLocation 'Cert:\CurrentUser\My' \
@@ -26,36 +26,36 @@ windows-code-sign-cert:
 			-KeyAlgorithm RSA \
 			-HashAlgorithm SHA256 \
 			-NotAfter (Get-Date).AddYears(3); \
-		Export-PfxCertificate -Cert $$cert -FilePath $$certPath -Password $$securePassword | Out-Null; \
-		Set-Content -Path $$passwordPath -Value $$password -NoNewline; \
-		Write-Host \"Created $$certPath\"; \
-		Write-Host \"Saved password in $$passwordPath\"; \
+		Export-PfxCertificate -Cert \$$cert -FilePath \$$certPath -Password \$$securePassword | Out-Null; \
+		Set-Content -Path \$$passwordPath -Value \$$password -NoNewline; \
+		Write-Host \"Created \$$certPath\"; \
+		Write-Host \"Saved password in \$$passwordPath\"; \
 		Write-Host \"Use for Windows packaging:\"; \
-		Write-Host \"  CSC_LINK=$$certPath CSC_KEY_PASSWORD=$$password npm run dist:win\"; \
+		Write-Host \"  CSC_LINK=\$$certPath CSC_KEY_PASSWORD=\$$password npm run dist:win\"; \
 	"
 
 .PHONY: windows-sign-exe
 windows-sign-exe:
 	@powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "\
-		$$ErrorActionPreference = 'Stop'; \
-		$$exePath = '$(WINDOWS_SIGN_EXE)'; \
-		$$certPath = '$(WINDOWS_CERT_PFX)'; \
-		$$passwordPath = '$(WINDOWS_CERT_PASSWORD_FILE)'; \
-		if (-not (Test-Path $$exePath)) { throw \"Executable not found: $$exePath\" }; \
-		if (-not (Test-Path $$certPath)) { throw \"Certificate not found: $$certPath. Run make windows-code-sign-cert first.\" }; \
-		if (-not (Test-Path $$passwordPath)) { throw \"Certificate password file not found: $$passwordPath. Run make windows-code-sign-cert first.\" }; \
-		$$password = Get-Content -Raw $$passwordPath; \
-		$$signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1; \
-		$$kitsRoot = Join-Path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Windows Kits\10\bin'; \
-		if (-not $$signtool -and (Test-Path $$kitsRoot)) { \
-			$$signtool = Get-ChildItem -Path $$kitsRoot -Recurse -Filter signtool.exe | Sort-Object FullName -Descending | Select-Object -ExpandProperty FullName -First 1; \
+		\$$ErrorActionPreference = 'Stop'; \
+		\$$exePath = '$(WINDOWS_SIGN_EXE)'; \
+		\$$certPath = '$(WINDOWS_CERT_PFX)'; \
+		\$$passwordPath = '$(WINDOWS_CERT_PASSWORD_FILE)'; \
+		if (-not (Test-Path \$$exePath)) { throw \"Executable not found: \$$exePath\" }; \
+		if (-not (Test-Path \$$certPath)) { throw \"Certificate not found: \$$certPath. Run make windows-code-sign-cert first.\" }; \
+		if (-not (Test-Path \$$passwordPath)) { throw \"Certificate password file not found: \$$passwordPath. Run make windows-code-sign-cert first.\" }; \
+		\$$password = Get-Content -Raw \$$passwordPath; \
+		\$$signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1; \
+		\$$kitsRoot = Join-Path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Windows Kits\10\bin'; \
+		if (-not \$$signtool -and (Test-Path \$$kitsRoot)) { \
+			\$$signtool = Get-ChildItem -Path \$$kitsRoot -Recurse -Filter signtool.exe | Sort-Object FullName -Descending | Select-Object -ExpandProperty FullName -First 1; \
 		}; \
-		if (-not $$signtool) { throw 'signtool.exe not found. Install the Windows SDK or add signtool.exe to PATH.' }; \
-		$$timestampUrl = '$(WINDOWS_SIGN_TIMESTAMP_URL)'; \
-		$$args = @('sign', '/f', (Resolve-Path $$certPath).Path, '/p', $$password, '/fd', 'SHA256', '/v'); \
-		if ($$timestampUrl) { $$args += @('/tr', $$timestampUrl, '/td', 'SHA256') }; \
-		$$args += (Resolve-Path $$exePath).Path; \
-		& $$signtool @args; \
-		if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE }; \
-		Write-Host \"Signed $$exePath\"; \
+		if (-not \$$signtool) { throw 'signtool.exe not found. Install the Windows SDK or add signtool.exe to PATH.' }; \
+		\$$timestampUrl = '$(WINDOWS_SIGN_TIMESTAMP_URL)'; \
+		\$$args = @('sign', '/f', (Resolve-Path \$$certPath).Path, '/p', \$$password, '/fd', 'SHA256', '/v'); \
+		if (\$$timestampUrl) { \$$args += @('/tr', \$$timestampUrl, '/td', 'SHA256') }; \
+		\$$args += (Resolve-Path \$$exePath).Path; \
+		& \$$signtool @args; \
+		if (\$$LASTEXITCODE -ne 0) { exit \$$LASTEXITCODE }; \
+		Write-Host \"Signed \$$exePath\"; \
 	"
