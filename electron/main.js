@@ -5,12 +5,17 @@ const { createElectronTabController } = require("../src/electron-tabs");
 
 const TOP_BAR_HEIGHT = 42;
 const SESSION_FILE_NAME = "chatgpt-multitab-session.json";
+const APP_ICON_FILE = "favicon-inverted.png";
 
 let mainWindow = null;
 let tabController = null;
 
 function getSessionFilePath() {
   return path.join(app.getPath("userData"), SESSION_FILE_NAME);
+}
+
+function getAppIconPath() {
+  return path.join(app.getAppPath(), APP_ICON_FILE);
 }
 
 function readSessionState() {
@@ -69,12 +74,15 @@ function createMainWindow() {
     height: 860,
     title: "ChatGPT Multitab",
     backgroundColor: "#f7f7f7",
+    autoHideMenuBar: true,
+    icon: getAppIconPath(),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(__dirname, "preload.js"),
     },
   });
+  mainWindow.setMenuBarVisibility(false);
 
   tabController = createElectronTabController({
     contentView: mainWindow.contentView,

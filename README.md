@@ -2,6 +2,8 @@
 
 `ChatGPT Multitab` is a local Electron app for using the official ChatGPT web UI with workspace tab support.
 
+2026-05-08: Changed from a Chrome plugin into an Electron app.
+
 It keeps multiple ChatGPT pages in one desktop window. Each ChatGPT tab is a real Electron `WebContentsView`, not an iframe, so the app avoids the frame-header and embedded-page issues from the earlier browser-extension version.
 
 ## What it does

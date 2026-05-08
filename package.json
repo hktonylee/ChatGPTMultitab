@@ -1,14 +1,36 @@
 {
-  "name": "chatgpt-multitab-system",
+  "name": "chatgpt-multitab",
   "version": "0.1.0",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.js worker/test/*.test.js",
-    "check": "node --check src/rules.js && node --check src/background.js && node --check src/options.js && node --check src/session-state.js && node --check src/electron-tabs.js && node --check src/chatgpt-url.js && node --check src/keyboard-shortcuts.js && node --check src/chatgpt-location.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js && node --check worker/src/worker-response.mjs && node --check worker/src/worker.mjs"
+    "check": "node --check src/rules.js && node --check src/background.js && node --check src/options.js && node --check src/session-state.js && node --check src/electron-tabs.js && node --check src/chatgpt-url.js && node --check src/keyboard-shortcuts.js && node --check src/chatgpt-location.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js && node --check worker/src/worker-response.mjs && node --check worker/src/worker.mjs",
+    "dist:win": "electron-builder --win nsis portable"
   },
   "devDependencies": {
-    "electron": "^42.0.0"
+    "electron": "^42.0.0",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "com.tonylee.chatgptmultitab",
+    "files": [
+      "electron/**",
+      "src/**",
+      "favicon-inverted.png",
+      "package.json"
+    ],
+    "icon": "favicon-inverted.png",
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

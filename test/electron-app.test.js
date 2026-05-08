@@ -36,6 +36,24 @@ test("electron main process configures permissions through the Electron session 
   assert.doesNotMatch(mainSource, /app\.session/);
 });
 
+test("electron main window hides the native menu bar", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+
+  assert.match(mainSource, /autoHideMenuBar:\s*true/);
+  assert.match(mainSource, /mainWindow\.setMenuBarVisibility\(false\)/);
+});
+
+test("electron app uses the inverted PNG logo", () => {
+  const packageJson = JSON.parse(readRepoFile("package.json"));
+  const mainSource = readRepoFile("electron", "main.js");
+
+  assert.equal(fs.existsSync(path.join(repoRoot, "favicon-inverted.png")), true);
+  assert.match(mainSource, /const APP_ICON_FILE = "favicon-inverted\.png";/);
+  assert.match(mainSource, /icon:\s*getAppIconPath\(\)/);
+  assert.equal(packageJson.build.icon, "favicon-inverted.png");
+  assert.equal(packageJson.build.files.includes("favicon-inverted.png"), true);
+});
+
 test("renderer shell is a multitab UI without iframe-hosted ChatGPT pages", () => {
   const rendererHtml = readRepoFile("electron", "renderer.html");
   const rendererSource = readRepoFile("electron", "renderer.js");
