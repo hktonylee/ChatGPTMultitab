@@ -1,11 +1,20 @@
 const fs = require("node:fs");
 const path = require("node:path");
-const { app, BrowserWindow, WebContentsView, ipcMain, session, shell } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  WebContentsView,
+  globalShortcut,
+  ipcMain,
+  session,
+  shell,
+} = require("electron");
 const { createElectronTabController } = require("../src/electron-tabs");
 
 const TOP_BAR_HEIGHT = 42;
 const SESSION_FILE_NAME = "chatgpt-multitab-session.json";
 const APP_ICON_FILE = "favicon-inverted.png";
+const TAB_SHORTCUTS = Object.freeze(["CommandOrControl+T", "CommandOrControl+W"]);
 
 let mainWindow = null;
 let tabController = null;
@@ -68,6 +77,44 @@ function createChatView() {
   return view;
 }
 
+function handleTabShortcut(event, input) {
+  if (input?.alt || !(input?.control || input?.meta)) {
+    return;
+  }
+
+  const key = String(input?.key || "").toLowerCase();
+
+  if (key === "t") {
+    event.preventDefault();
+    getController().createTab();
+    return;
+  }
+
+  if (key === "w") {
+    event.preventDefault();
+    getController().closeTab(getController().getActiveTab()?.id);
+  }
+}
+
+function createTabFromShortcut() {
+  getController().createTab();
+}
+
+function closeActiveTabFromShortcut() {
+  getController().closeTab(getController().getActiveTab()?.id);
+}
+
+function registerFocusedWindowShortcuts() {
+  globalShortcut.register("CommandOrControl+T", createTabFromShortcut);
+  globalShortcut.register("CommandOrControl+W", closeActiveTabFromShortcut);
+}
+
+function unregisterFocusedWindowShortcuts() {
+  TAB_SHORTCUTS.forEach((shortcut) => {
+    globalShortcut.unregister(shortcut);
+  });
+}
+
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -83,6 +130,7 @@ function createMainWindow() {
     },
   });
   mainWindow.setMenuBarVisibility(false);
+  mainWindow.setMenu(null);
 
   tabController = createElectronTabController({
     contentView: mainWindow.contentView,
@@ -91,6 +139,11 @@ function createMainWindow() {
     initialState: readSessionState(),
     onStateChange: sendTabState,
   });
+  mainWindow.webContents.on("before-input-event", handleTabShortcut);
+  registerFocusedWindowShortcuts();
+  mainWindow.on("focus", registerFocusedWindowShortcuts);
+  mainWindow.on("blur", unregisterFocusedWindowShortcuts);
+  mainWindow.on("closed", unregisterFocusedWindowShortcuts);
 
   mainWindow.on("resize", () => {
     tabController.setBounds(getChatBounds(mainWindow));
@@ -145,4 +198,8 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("will-quit", () => {
+  unregisterFocusedWindowShortcuts();
 });

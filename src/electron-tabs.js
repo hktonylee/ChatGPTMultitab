@@ -66,7 +66,27 @@ function createElectronTabController({
 
     tab.view.setBounds(bounds);
     contentView.addChildView(tab.view);
+    tab.view.webContents.focus?.();
     attachedView = tab.view;
+  }
+
+  function handleTabShortcut(tab, event, input) {
+    if (input?.alt || !(input?.control || input?.meta)) {
+      return;
+    }
+
+    const key = String(input?.key || "").toLowerCase();
+
+    if (key === "t") {
+      event.preventDefault();
+      controller.createTab();
+      return;
+    }
+
+    if (key === "w") {
+      event.preventDefault();
+      controller.closeTab(tab.id);
+    }
   }
 
   function createManagedTab(tabState) {
@@ -90,6 +110,9 @@ function createElectronTabController({
     });
     tab.view.webContents.on?.("did-navigate-in-page", (_event, url) => {
       controller.updateTab(tab.id, { url });
+    });
+    tab.view.webContents.on?.("before-input-event", (event, input) => {
+      handleTabShortcut(tab, event, input);
     });
 
     return tab;

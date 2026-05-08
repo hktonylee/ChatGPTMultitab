@@ -72,6 +72,15 @@ tabList.addEventListener("auxclick", (event) => {
   }
 });
 
+tabList.addEventListener("dblclick", (event) => {
+  const tabId = getTabIdFromEvent(event);
+
+  if (tabId) {
+    event.preventDefault();
+    window.chatgptTabs.closeTab(tabId);
+  }
+});
+
 document.addEventListener("keydown", (event) => {
   if (event.altKey || !(event.ctrlKey || event.metaKey)) {
     return;
@@ -80,6 +89,12 @@ document.addEventListener("keydown", (event) => {
   if (String(event.key).toLowerCase() === "t") {
     event.preventDefault();
     window.chatgptTabs.createTab();
+    return;
+  }
+
+  if (String(event.key).toLowerCase() === "w") {
+    event.preventDefault();
+    window.chatgptTabs.closeTab(currentState.activeTabId);
     return;
   }
 
