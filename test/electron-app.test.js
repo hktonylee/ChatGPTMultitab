@@ -143,6 +143,7 @@ test("electron main process handles tab shortcuts before native window accelerat
   assert.match(mainSource, /function handleTabShortcut/);
   assert.match(mainSource, /event\.preventDefault\(\);/);
   assert.match(mainSource, /getController\(\)\.closeTab\(getController\(\)\.getActiveTab\(\)\?\.id\)/);
+  assert.match(mainSource, /getController\(\)\.getActiveTab\(\)\?\.view\.webContents\.reload\?\.\(\)/);
   assert.match(mainSource, /mainWindow\.webContents\.on\("before-input-event", handleTabShortcut\)/);
 });
 
@@ -269,6 +270,7 @@ test("electron tab controller handles webContents shortcuts before window defaul
   const { createElectronTabController } = require("../src/electron-tabs");
 
   const beforeInputHandlers = [];
+  let reloadCount = 0;
   const contentView = {
     addChildView() {},
     removeChildView() {},
@@ -285,6 +287,9 @@ test("electron tab controller handles webContents shortcuts before window defaul
           }
         },
         close() {},
+        reload() {
+          reloadCount += 1;
+        },
       },
     };
   }
@@ -348,4 +353,23 @@ test("electron tab controller handles webContents shortcuts before window defaul
   assert.equal(nextNewTabPrevented, true);
   assert.equal(controller.getState().tabs.length, 3);
   assert.equal(controller.getState().activeTabId, 3);
+
+  let reloadPrevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        reloadPrevented = true;
+      },
+    },
+    {
+      alt: false,
+      control: true,
+      meta: false,
+      key: "r",
+    },
+  );
+
+  assert.equal(reloadPrevented, true);
+  assert.equal(reloadCount, 1);
+  assert.equal(controller.getState().tabs.length, 3);
 });

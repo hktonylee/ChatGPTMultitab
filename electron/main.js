@@ -91,6 +91,12 @@ function handleTabShortcut(event, input) {
   if (key === "w") {
     event.preventDefault();
     getController().closeTab(getController().getActiveTab()?.id);
+    return;
+  }
+
+  if (key === "r") {
+    event.preventDefault();
+    getController().getActiveTab()?.view.webContents.reload?.();
   }
 }
 

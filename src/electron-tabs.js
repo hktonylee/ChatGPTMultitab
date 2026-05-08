@@ -86,6 +86,12 @@ function createElectronTabController({
     if (key === "w") {
       event.preventDefault();
       controller.closeTab(tab.id);
+      return;
+    }
+
+    if (key === "r") {
+      event.preventDefault();
+      tab.view.webContents.reload?.();
     }
   }
 
