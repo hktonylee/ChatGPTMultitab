@@ -128,13 +128,13 @@ test("renderer shell is a multitab UI without iframe-hosted ChatGPT pages", () =
   assert.doesNotMatch(rendererSource, /createElement\(['"]iframe['"]\)/);
 });
 
-test("renderer maps tab keyboard shortcuts to new and close actions", () => {
+test("renderer leaves new and close shortcuts to the main process", () => {
   const rendererSource = readRepoFile("electron", "renderer.js");
 
-  assert.match(rendererSource, /String\(event\.key\)\.toLowerCase\(\) === "t"/);
-  assert.match(rendererSource, /window\.chatgptTabs\.createTab\(\)/);
-  assert.match(rendererSource, /String\(event\.key\)\.toLowerCase\(\) === "w"/);
-  assert.match(rendererSource, /window\.chatgptTabs\.closeTab\(currentState\.activeTabId\)/);
+  assert.doesNotMatch(rendererSource, /String\(event\.key\)\.toLowerCase\(\) === "t"/);
+  assert.doesNotMatch(rendererSource, /String\(event\.key\)\.toLowerCase\(\) === "w"/);
+  assert.doesNotMatch(rendererSource, /window\.chatgptTabs\.closeTab\(currentState\.activeTabId\)/);
+  assert.match(rendererSource, /event\.key === "Tab"/);
 });
 
 test("electron main process handles tab shortcuts before native window accelerators", () => {
@@ -146,16 +146,14 @@ test("electron main process handles tab shortcuts before native window accelerat
   assert.match(mainSource, /mainWindow\.webContents\.on\("before-input-event", handleTabShortcut\)/);
 });
 
-test("electron main process keeps tab shortcuts available when focus leaves web contents", () => {
+test("electron main process does not register duplicate global tab shortcuts", () => {
   const mainSource = readRepoFile("electron", "main.js");
 
-  assert.match(mainSource, /globalShortcut/);
-  assert.match(mainSource, /function registerFocusedWindowShortcuts/);
-  assert.match(mainSource, /globalShortcut\.register\("CommandOrControl\+T"/);
-  assert.match(mainSource, /globalShortcut\.register\("CommandOrControl\+W"/);
-  assert.match(mainSource, /registerFocusedWindowShortcuts\(\);\s*mainWindow\.on\("focus", registerFocusedWindowShortcuts\)/);
-  assert.match(mainSource, /mainWindow\.on\("focus", registerFocusedWindowShortcuts\)/);
-  assert.match(mainSource, /mainWindow\.on\("blur", unregisterFocusedWindowShortcuts\)/);
+  assert.doesNotMatch(mainSource, /globalShortcut/);
+  assert.doesNotMatch(mainSource, /CommandOrControl\+T/);
+  assert.doesNotMatch(mainSource, /CommandOrControl\+W/);
+  assert.doesNotMatch(mainSource, /registerFocusedWindowShortcuts/);
+  assert.doesNotMatch(mainSource, /unregisterFocusedWindowShortcuts/);
 });
 
 test("renderer closes a tab on double click", () => {

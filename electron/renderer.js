@@ -86,18 +86,6 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (String(event.key).toLowerCase() === "t") {
-    event.preventDefault();
-    window.chatgptTabs.createTab();
-    return;
-  }
-
-  if (String(event.key).toLowerCase() === "w") {
-    event.preventDefault();
-    window.chatgptTabs.closeTab(currentState.activeTabId);
-    return;
-  }
-
   if (event.key === "Tab") {
     event.preventDefault();
     const tabs = currentState.tabs;
