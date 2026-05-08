@@ -88,6 +88,7 @@ test("Makefile can create a Windows code-signing certificate", () => {
   assert.match(makefile, /\.PHONY: windows-code-sign-cert/);
   assert.match(makefile, /New-SelfSignedCertificate/);
   assert.match(makefile, /-Type CodeSigningCert/);
+  assert.match(makefile, /RandomNumberGenerator/);
   assert.match(makefile, /Export-PfxCertificate/);
   assert.match(makefile, /CSC_LINK=.*CSC_KEY_PASSWORD=.*npm run dist:win/);
 });
@@ -96,8 +97,11 @@ test("Makefile can sign a Windows executable with the generated certificate", ()
   const makefile = readRepoFile("Makefile");
 
   assert.match(makefile, /\.PHONY: windows-sign-exe/);
-  assert.match(makefile, /WINDOWS_SIGN_EXE/);
+  assert.match(makefile, /WINDOWS_SIGN_EXE \?= dist\/win-unpacked\/chatgpt-multitab\.exe/);
   assert.match(makefile, /signtool\.exe/);
+  assert.match(makefile, /Set-AuthenticodeSignature/);
+  assert.match(makefile, /Cert:\\CurrentUser\\My/);
+  assert.match(makefile, /SignerCertificate/);
   assert.match(makefile, /Export-PfxCertificate/);
   assert.match(makefile, /\/f/);
   assert.match(makefile, /\/p/);
