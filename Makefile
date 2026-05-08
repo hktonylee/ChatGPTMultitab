@@ -2,7 +2,7 @@ WINDOWS_CERT_DIR ?= certs
 WINDOWS_CERT_NAME ?= ChatGPT Multitab Local Code Signing
 WINDOWS_CERT_PFX ?= $(WINDOWS_CERT_DIR)/chatgpt-multitab-code-signing.pfx
 WINDOWS_CERT_PASSWORD_FILE ?= $(WINDOWS_CERT_DIR)/chatgpt-multitab-code-signing.password.txt
-WINDOWS_SIGN_EXE ?= dist/win-unpacked/chatgpt-multitab.exe
+WINDOWS_SIGN_EXE ?=
 WINDOWS_SIGN_TIMESTAMP_URL ?= http://timestamp.digicert.com
 
 .PHONY: windows-code-sign-cert
@@ -40,12 +40,18 @@ windows-code-sign-cert:
 windows-sign-exe:
 	@powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "\
 		\$$ErrorActionPreference = 'Stop'; \
-		\$$exePath = '$(WINDOWS_SIGN_EXE)'; \
+		\$$requestedExe = '$(WINDOWS_SIGN_EXE)'; \
 		\$$certPath = '$(WINDOWS_CERT_PFX)'; \
 		\$$passwordPath = '$(WINDOWS_CERT_PASSWORD_FILE)'; \
-		if (-not (Test-Path \$$exePath)) { throw \"Executable not found: \$$exePath\" }; \
 		if (-not (Test-Path \$$certPath)) { throw \"Certificate not found: \$$certPath. Run make windows-code-sign-cert first.\" }; \
 		if (-not (Test-Path \$$passwordPath)) { throw \"Certificate password file not found: \$$passwordPath. Run make windows-code-sign-cert first.\" }; \
+		if (\$$requestedExe) { \
+			if (-not (Test-Path \$$requestedExe)) { throw \"Executable not found: \$$requestedExe\" }; \
+			\$$exePaths = @((Resolve-Path \$$requestedExe).Path); \
+		} else { \
+			\$$exePaths = @(Get-ChildItem 'dist' -Recurse -Filter '*.exe' | Select-Object -ExpandProperty FullName); \
+			if (\$$exePaths.Count -eq 0) { throw 'No .exe files found under dist. Run npm run dist:win first.' }; \
+		}; \
 		\$$password = Get-Content -Raw \$$passwordPath; \
 		\$$signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1; \
 		\$$kitsRoot = Join-Path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Windows Kits\10\bin'; \
@@ -54,20 +60,25 @@ windows-sign-exe:
 		}; \
 		\$$timestampUrl = '$(WINDOWS_SIGN_TIMESTAMP_URL)'; \
 		if (\$$signtool) { \
-			\$$args = @('sign', '/f', (Resolve-Path \$$certPath).Path, '/p', \$$password, '/fd', 'SHA256', '/v'); \
-			if (\$$timestampUrl) { \$$args += @('/tr', \$$timestampUrl, '/td', 'SHA256') }; \
-			\$$args += (Resolve-Path \$$exePath).Path; \
-			& \$$signtool @args; \
-			if (\$$LASTEXITCODE -ne 0) { exit \$$LASTEXITCODE }; \
+			foreach (\$$exePath in \$$exePaths) { \
+				\$$args = @('sign', '/f', (Resolve-Path \$$certPath).Path, '/p', \$$password, '/fd', 'SHA256', '/v'); \
+				if (\$$timestampUrl) { \$$args += @('/tr', \$$timestampUrl, '/td', 'SHA256') }; \
+				\$$args += \$$exePath; \
+				& \$$signtool @args; \
+				if (\$$LASTEXITCODE -ne 0) { exit \$$LASTEXITCODE }; \
+				Write-Host \"Signed \$$exePath\"; \
+			}; \
 		} else { \
 			\$$subject = 'CN=$(WINDOWS_CERT_NAME)'; \
 			\$$cert = Get-ChildItem 'Cert:\CurrentUser\My' | Where-Object { \$$_.Subject -eq \$$subject -and \$$_.HasPrivateKey } | Sort-Object NotAfter -Descending | Select-Object -First 1; \
 			if (-not \$$cert) { throw \"Code signing certificate not found in Cert:\CurrentUser\My for \$$subject. Run make windows-code-sign-cert first.\" }; \
-			\$$signatureArgs = @{ FilePath = (Resolve-Path \$$exePath).Path; Certificate = \$$cert; HashAlgorithm = 'SHA256' }; \
-			if (\$$timestampUrl) { \$$signatureArgs.TimestampServer = \$$timestampUrl }; \
-			\$$signature = Set-AuthenticodeSignature @signatureArgs; \
-			if (-not \$$signature.SignerCertificate) { throw \"Signing failed: \$$(\$$signature.Status) \$$(\$$signature.StatusMessage)\" }; \
-			if (\$$signature.Status -ne 'Valid') { Write-Warning \"Signed, but Windows reports: \$$(\$$signature.Status) \$$(\$$signature.StatusMessage)\" }; \
+			foreach (\$$exePath in \$$exePaths) { \
+				\$$signatureArgs = @{ FilePath = \$$exePath; Certificate = \$$cert; HashAlgorithm = 'SHA256' }; \
+				if (\$$timestampUrl) { \$$signatureArgs.TimestampServer = \$$timestampUrl }; \
+				\$$signature = Set-AuthenticodeSignature @signatureArgs; \
+				if (-not \$$signature.SignerCertificate) { throw \"Signing failed for \$${exePath}: \$$(\$$signature.Status) \$$(\$$signature.StatusMessage)\" }; \
+				if (\$$signature.Status -ne 'Valid') { Write-Warning \"Signed \$$exePath, but Windows reports: \$$(\$$signature.Status) \$$(\$$signature.StatusMessage)\" }; \
+				Write-Host \"Signed \$$exePath\"; \
+			}; \
 		}; \
-		Write-Host \"Signed \$$exePath\"; \
 	"

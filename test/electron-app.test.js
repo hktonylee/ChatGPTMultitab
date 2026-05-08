@@ -97,7 +97,8 @@ test("Makefile can sign a Windows executable with the generated certificate", ()
   const makefile = readRepoFile("Makefile");
 
   assert.match(makefile, /\.PHONY: windows-sign-exe/);
-  assert.match(makefile, /WINDOWS_SIGN_EXE \?= dist\/win-unpacked\/chatgpt-multitab\.exe/);
+  assert.match(makefile, /WINDOWS_SIGN_EXE \?=/);
+  assert.match(makefile, /Get-ChildItem 'dist' -Recurse -Filter '\*\.exe'/);
   assert.match(makefile, /signtool\.exe/);
   assert.match(makefile, /Set-AuthenticodeSignature/);
   assert.match(makefile, /Cert:\\CurrentUser\\My/);
