@@ -54,6 +54,32 @@ test("electron app uses the inverted PNG logo", () => {
   assert.equal(packageJson.build.files.includes("favicon-inverted.png"), true);
 });
 
+test("repo no longer ships Chrome extension or Worker build code", () => {
+  const packageJson = JSON.parse(readRepoFile("package.json"));
+  const removedPaths = [
+    "manifest.json",
+    "options.html",
+    "Makefile",
+    "src/background.js",
+    "src/options.js",
+    "src/rules.js",
+    "src/chatgpt-location.js",
+    "src/chatgpt-url.js",
+    "src/keyboard-shortcuts.js",
+    "worker/package.json",
+    "worker/wrangler.toml",
+  ];
+
+  removedPaths.forEach((removedPath) => {
+    assert.equal(fs.existsSync(path.join(repoRoot, removedPath)), false, removedPath);
+  });
+  assert.equal(packageJson.scripts.test, "node --test test/*.test.js");
+  assert.equal(
+    packageJson.scripts.check,
+    "node --check src/session-state.js && node --check src/electron-tabs.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js",
+  );
+});
+
 test("renderer shell is a multitab UI without iframe-hosted ChatGPT pages", () => {
   const rendererHtml = readRepoFile("electron", "renderer.html");
   const rendererSource = readRepoFile("electron", "renderer.js");

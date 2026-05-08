@@ -60,5 +60,3 @@ npm run check
 - `electron/renderer.css`: desktop shell styling
 - `src/electron-tabs.js`: testable tab and view controller
 - `src/session-state.js`: shared tab-session normalization helpers
-
-The older Manifest V3 extension and Cloudflare Worker files are still present while the migration settles, but the supported runtime path is the Electron app.
