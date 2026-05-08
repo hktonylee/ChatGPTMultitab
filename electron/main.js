@@ -75,31 +75,6 @@ function createChatView() {
   return view;
 }
 
-function handleTabShortcut(event, input) {
-  if (input?.alt || !(input?.control || input?.meta)) {
-    return;
-  }
-
-  const key = String(input?.key || "").toLowerCase();
-
-  if (key === "t") {
-    event.preventDefault();
-    getController().createTab();
-    return;
-  }
-
-  if (key === "w") {
-    event.preventDefault();
-    getController().closeTab(getController().getActiveTab()?.id);
-    return;
-  }
-
-  if (key === "r") {
-    event.preventDefault();
-    getController().getActiveTab()?.view.webContents.reload?.();
-  }
-}
-
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -124,7 +99,6 @@ function createMainWindow() {
     initialState: readSessionState(),
     onStateChange: sendTabState,
   });
-  mainWindow.webContents.on("before-input-event", handleTabShortcut);
 
   mainWindow.on("resize", () => {
     tabController.setBounds(getChatBounds(mainWindow));

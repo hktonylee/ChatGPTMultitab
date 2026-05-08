@@ -128,7 +128,7 @@ test("renderer shell is a multitab UI without iframe-hosted ChatGPT pages", () =
   assert.doesNotMatch(rendererSource, /createElement\(['"]iframe['"]\)/);
 });
 
-test("renderer leaves new and close shortcuts to the main process", () => {
+test("renderer leaves new and close shortcuts to the managed chat webContents", () => {
   const rendererSource = readRepoFile("electron", "renderer.js");
 
   assert.doesNotMatch(rendererSource, /String\(event\.key\)\.toLowerCase\(\) === "t"/);
@@ -137,14 +137,13 @@ test("renderer leaves new and close shortcuts to the main process", () => {
   assert.match(rendererSource, /event\.key === "Tab"/);
 });
 
-test("electron main process handles tab shortcuts before native window accelerators", () => {
+test("electron main process does not handle tab shortcuts a second time", () => {
   const mainSource = readRepoFile("electron", "main.js");
 
-  assert.match(mainSource, /function handleTabShortcut/);
-  assert.match(mainSource, /event\.preventDefault\(\);/);
-  assert.match(mainSource, /getController\(\)\.closeTab\(getController\(\)\.getActiveTab\(\)\?\.id\)/);
-  assert.match(mainSource, /getController\(\)\.getActiveTab\(\)\?\.view\.webContents\.reload\?\.\(\)/);
-  assert.match(mainSource, /mainWindow\.webContents\.on\("before-input-event", handleTabShortcut\)/);
+  assert.doesNotMatch(mainSource, /function handleTabShortcut/);
+  assert.doesNotMatch(mainSource, /mainWindow\.webContents\.on\("before-input-event"/);
+  assert.doesNotMatch(mainSource, /getController\(\)\.closeTab\(getController\(\)\.getActiveTab\(\)\?\.id\)/);
+  assert.doesNotMatch(mainSource, /getController\(\)\.getActiveTab\(\)\?\.view\.webContents\.reload\?\.\(\)/);
 });
 
 test("electron main process does not register duplicate global tab shortcuts", () => {
