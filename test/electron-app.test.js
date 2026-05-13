@@ -429,3 +429,71 @@ test("electron tab controller handles webContents shortcuts before window defaul
   assert.equal(reloadCount, 1);
   assert.equal(controller.getState().tabs.length, 3);
 });
+
+test("electron tab controller ignores shortcut key-up events", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const beforeInputHandlers = [];
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on(eventName, handler) {
+          if (eventName === "before-input-event") {
+            beforeInputHandlers.push(handler);
+          }
+        },
+        close() {},
+        reload() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  let newTabPrevented = false;
+
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        newTabPrevented = true;
+      },
+    },
+    {
+      type: "keyUp",
+      alt: false,
+      control: true,
+      meta: false,
+      key: "t",
+    },
+  );
+
+  assert.equal(newTabPrevented, false);
+  assert.equal(controller.getState().tabs.length, 1);
+
+  let closeTabPrevented = false;
+
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        closeTabPrevented = true;
+      },
+    },
+    {
+      type: "keyUp",
+      alt: false,
+      control: true,
+      meta: false,
+      key: "w",
+    },
+  );
+
+  assert.equal(closeTabPrevented, false);
+  assert.equal(controller.getState().tabs.length, 1);
+  assert.equal(controller.getState().closedTabs.length, 0);
+});

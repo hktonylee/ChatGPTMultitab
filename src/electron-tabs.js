@@ -71,6 +71,10 @@ function createElectronTabController({
   }
 
   function handleTabShortcut(tab, event, input) {
+    if (input?.type && input.type !== "keyDown") {
+      return;
+    }
+
     if (input?.alt || !(input?.control || input?.meta)) {
       return;
     }
