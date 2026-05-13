@@ -156,6 +156,31 @@ test("electron main process does not register duplicate global tab shortcuts", (
   assert.doesNotMatch(mainSource, /unregisterFocusedWindowShortcuts/);
 });
 
+test("only the Electron tab controller owns Ctrl+T and Ctrl+W shortcuts", () => {
+  const controllerSource = readRepoFile("src", "electron-tabs.js");
+  const nonControllerSource = [
+    readRepoFile("electron", "main.js"),
+    readRepoFile("electron", "preload.js"),
+    readRepoFile("electron", "renderer.js"),
+  ].join("\n");
+
+  assert.equal((controllerSource.match(/before-input-event/g) || []).length, 1);
+  assert.match(controllerSource, /key === "t"/);
+  assert.match(controllerSource, /controller\.createTab\(\)/);
+  assert.match(controllerSource, /key === "w"/);
+  assert.match(controllerSource, /controller\.closeTab\(tab\.id\)/);
+
+  assert.doesNotMatch(nonControllerSource, /before-input-event/);
+  assert.doesNotMatch(nonControllerSource, /globalShortcut/);
+  assert.doesNotMatch(nonControllerSource, /CommandOrControl\+(?:T|W)/);
+  assert.doesNotMatch(nonControllerSource, /event\.key\s*={2,3}\s*["'][tTwW]["']/);
+  assert.doesNotMatch(
+    nonControllerSource,
+    /(?:event\.)?key(?:\s*\|\|\s*["'])?\.toLowerCase\(\)\s*={2,3}\s*["'][tw]["']/,
+  );
+  assert.doesNotMatch(nonControllerSource, /case\s+["'][tTwW]["']\s*:/);
+});
+
 test("renderer closes a tab on double click", () => {
   const rendererSource = readRepoFile("electron", "renderer.js");
 
