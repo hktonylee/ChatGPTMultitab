@@ -455,6 +455,77 @@ test("electron tab controller handles webContents shortcuts before window defaul
   assert.equal(controller.getState().tabs.length, 3);
 });
 
+test("electron tab controller switches tabs with Windows Ctrl+Tab shortcuts", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const beforeInputHandlers = [];
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on(eventName, handler) {
+          if (eventName === "before-input-event") {
+            beforeInputHandlers.push(handler);
+          }
+        },
+        close() {},
+        reload() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  controller.createTab("https://chatgpt.com/c/second");
+  controller.createTab("https://chatgpt.com/c/third");
+
+  let nextPrevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        nextPrevented = true;
+      },
+    },
+    {
+      alt: false,
+      control: true,
+      meta: false,
+      shift: false,
+      key: "Tab",
+      code: "Tab",
+    },
+  );
+
+  assert.equal(nextPrevented, true);
+  assert.equal(controller.getState().activeTabId, 1);
+
+  let previousPrevented = false;
+  beforeInputHandlers[0](
+    {
+      preventDefault() {
+        previousPrevented = true;
+      },
+    },
+    {
+      alt: false,
+      control: true,
+      meta: false,
+      shift: true,
+      key: "Tab",
+      code: "Tab",
+    },
+  );
+
+  assert.equal(previousPrevented, true);
+  assert.equal(controller.getState().activeTabId, 3);
+});
+
 test("electron tab controller ignores shortcut key-up events", () => {
   const { createElectronTabController } = require("../src/electron-tabs");
 
