@@ -108,6 +108,10 @@ function createMainWindow() {
     tabController.setBounds(getChatBounds(mainWindow));
   });
 
+  mainWindow.on("focus", () => {
+    tabController.focusActiveTab();
+  });
+
   mainWindow.loadFile(path.join(__dirname, "renderer.html"));
   mainWindow.webContents.once("did-finish-load", () => {
     sendTabState(tabController.getState());

@@ -266,6 +266,17 @@ function createElectronTabController({
       tabs.find((tab) => tab.id === activeTabId)?.view.setBounds(bounds);
     },
 
+    focusActiveTab() {
+      const tab = tabs.find((item) => item.id === activeTabId);
+
+      if (!tab) {
+        return null;
+      }
+
+      tab.view.webContents.focus?.();
+      return tab;
+    },
+
     getActiveTab() {
       return tabs.find((tab) => tab.id === activeTabId) || null;
     },

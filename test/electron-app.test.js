@@ -44,6 +44,13 @@ test("electron main window hides the native menu bar", () => {
   assert.match(mainSource, /mainWindow\.setMenu\(null\)/);
 });
 
+test("electron main window returns focus to the active ChatGPT view when refocused", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+
+  assert.match(mainSource, /mainWindow\.on\("focus", \(\) => \{/);
+  assert.match(mainSource, /tabController\.focusActiveTab\(\)/);
+});
+
 test("electron app uses the inverted PNG logo", () => {
   const packageJson = JSON.parse(readRepoFile("package.json"));
   const mainSource = readRepoFile("electron", "main.js");
@@ -288,6 +295,45 @@ test("electron tab controller focuses the visible WebContentsView when the activ
   controller.closeTab(firstTab.id);
 
   assert.equal(focusedViews.at(-1), secondTab.view);
+});
+
+test("electron tab controller can restore focus to the active WebContentsView", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+  const focusedViews = [];
+
+  function createView() {
+    const view = {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on() {},
+        close() {},
+        focus() {
+          focusedViews.push(view);
+        },
+      },
+    };
+
+    return view;
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const firstTab = controller.getActiveTab();
+  const secondTab = controller.createTab("https://chatgpt.com/c/second");
+
+  controller.focusActiveTab();
+
+  assert.equal(focusedViews.at(-1), secondTab.view);
+
+  controller.activateTab(firstTab.id);
+  controller.focusActiveTab();
+
+  assert.equal(focusedViews.at(-1), firstTab.view);
 });
 
 test("electron tab controller replaces the last closed tab with a new default tab", () => {
