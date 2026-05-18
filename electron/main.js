@@ -13,9 +13,11 @@ const { createElectronTabController } = require("../src/electron-tabs");
 const TOP_BAR_HEIGHT = 42;
 const SESSION_FILE_NAME = "chatgpt-multitab-session.json";
 const APP_ICON_FILE = "favicon-inverted.png";
+const NEW_TAB_ARG = "--new-tab";
 
 let mainWindow = null;
 let tabController = null;
+let pendingNewTabRequest = process.argv.includes(NEW_TAB_ARG);
 
 function getSessionFilePath() {
   return path.join(app.getPath("userData"), SESSION_FILE_NAME);
@@ -56,6 +58,44 @@ function sendTabState(state) {
 
   mainWindow.webContents.send("tabs:state", state);
   writeSessionState(state);
+}
+
+function shouldOpenNewTab(argv = []) {
+  return argv.includes(NEW_TAB_ARG);
+}
+
+function focusMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return false;
+  }
+
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+
+  mainWindow.show();
+  mainWindow.focus();
+  return true;
+}
+
+function openNewTabInMainWindow() {
+  if (!tabController) {
+    pendingNewTabRequest = true;
+    focusMainWindow();
+    return null;
+  }
+
+  focusMainWindow();
+  return tabController.createTab();
+}
+
+function handleOpenRequest(argv) {
+  if (!shouldOpenNewTab(argv)) {
+    focusMainWindow();
+    return null;
+  }
+
+  return openNewTabInMainWindow();
 }
 
 function createChatView() {
@@ -114,6 +154,12 @@ function createMainWindow() {
 
   mainWindow.loadFile(path.join(__dirname, "renderer.html"));
   mainWindow.webContents.once("did-finish-load", () => {
+    if (pendingNewTabRequest) {
+      pendingNewTabRequest = false;
+      openNewTabInMainWindow();
+      return;
+    }
+
     sendTabState(tabController.getState());
   });
 }
@@ -139,19 +185,29 @@ ipcMain.handle("tabs:openExternal", () => {
   }
 });
 
-app.whenReady().then(() => {
-  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-    callback(["camera", "clipboard-sanitized-write", "geolocation", "media"].includes(permission));
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (_event, argv) => {
+    handleOpenRequest(argv);
   });
 
-  createMainWindow();
+  app.whenReady().then(() => {
+    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+      callback(["camera", "clipboard-sanitized-write", "geolocation", "media"].includes(permission));
+    });
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createMainWindow();
-    }
+    createMainWindow();
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createMainWindow();
+      }
+    });
   });
-});
+}
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

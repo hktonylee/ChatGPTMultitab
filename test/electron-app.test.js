@@ -51,6 +51,28 @@ test("electron main window returns focus to the active ChatGPT view when refocus
   assert.match(mainSource, /tabController\.focusActiveTab\(\)/);
 });
 
+test("electron main process opens a new tab from a second-instance command argument", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+
+  assert.match(mainSource, /const NEW_TAB_ARG = "--new-tab";/);
+  assert.match(mainSource, /app\.requestSingleInstanceLock\(\)/);
+  assert.match(mainSource, /app\.on\("second-instance", \(_event, argv\) => \{/);
+  assert.match(mainSource, /handleOpenRequest\(argv\)/);
+  assert.match(mainSource, /argv\.includes\(NEW_TAB_ARG\)/);
+  assert.match(mainSource, /tabController\.createTab\(\)/);
+  assert.match(mainSource, /focusMainWindow\(\)/);
+});
+
+test("AutoHotkey launcher asks Electron to create the tab instead of sending Ctrl+T", () => {
+  const script = readRepoFile("ChatGPTMultitab.ahk");
+
+  assert.match(script, /#Enter::OpenChatGPTMultitabNewTab\(\)/);
+  assert.match(script, /--new-tab/);
+  assert.match(script, /ProcessGetPath\(WinGetPID\("ahk_id " hwnd\)\)/);
+  assert.match(script, /Run .*NEW_TAB_ARG/);
+  assert.doesNotMatch(script, /Send\s+["']?\^t/i);
+});
+
 test("electron app uses the inverted PNG logo", () => {
   const packageJson = JSON.parse(readRepoFile("package.json"));
   const mainSource = readRepoFile("electron", "main.js");
