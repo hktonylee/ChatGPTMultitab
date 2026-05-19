@@ -15,7 +15,7 @@ const TOP_BAR_HEIGHT = 42;
 const SESSION_FILE_NAME = "chatgpt-multitab-session.json";
 const APP_ICON_FILE = "favicon-inverted.png";
 const NEW_TAB_ARG = "--new-tab";
-const NEW_TAB_SHORTCUT = "Super+Enter";
+const NEW_TAB_SHORTCUTS = Object.freeze(["Super+Enter", "Super+C"]);
 
 let mainWindow = null;
 let tabController = null;
@@ -100,9 +100,15 @@ function handleOpenRequest(argv) {
   return openNewTabInMainWindow();
 }
 
-function registerNewTabShortcut() {
-  globalShortcut.register(NEW_TAB_SHORTCUT, () => {
-    openNewTabInMainWindow();
+function registerNewTabShortcuts() {
+  NEW_TAB_SHORTCUTS.forEach((shortcut) => {
+    const registered = globalShortcut.register(shortcut, () => {
+      openNewTabInMainWindow();
+    });
+
+    if (!registered) {
+      console.warn(`Failed to register global shortcut ${shortcut}`);
+    }
   });
 }
 
@@ -208,7 +214,7 @@ if (!gotSingleInstanceLock) {
     });
 
     createMainWindow();
-    registerNewTabShortcut();
+    registerNewTabShortcuts();
 
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -219,7 +225,7 @@ if (!gotSingleInstanceLock) {
 }
 
 app.on("will-quit", () => {
-  globalShortcut.unregister(NEW_TAB_SHORTCUT);
+  NEW_TAB_SHORTCUTS.forEach((shortcut) => globalShortcut.unregister(shortcut));
 });
 
 app.on("window-all-closed", () => {
