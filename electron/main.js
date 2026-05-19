@@ -15,7 +15,7 @@ const TOP_BAR_HEIGHT = 42;
 const SESSION_FILE_NAME = "chatgpt-multitab-session.json";
 const APP_ICON_FILE = "favicon-inverted.png";
 const NEW_TAB_ARG = "--new-tab";
-const NEW_TAB_SHORTCUTS = Object.freeze(["Super+Enter", "Super+C"]);
+const NEW_TAB_SHORTCUTS = Object.freeze(["Super+C"]);
 
 let mainWindow = null;
 let tabController = null;
