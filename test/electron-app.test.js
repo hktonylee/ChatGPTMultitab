@@ -231,8 +231,10 @@ test("renderer marks unloaded tabs with a distinct tab strip state", () => {
   const rendererStyles = readRepoFile("electron", "renderer.css");
 
   assert.match(rendererSource, /tabButton\.dataset\.loadedState = tab\.isUnloaded \? "unloaded" : "loaded";/);
-  assert.match(rendererStyles, /\.tab\[data-loaded-state="unloaded"\]/);
+  assert.doesNotMatch(rendererStyles, /\.tab\[data-loaded-state="unloaded"\]\s*\{[^}]*background:/);
+  assert.doesNotMatch(rendererStyles, /\.tab\[data-loaded-state="unloaded"\] \.tab-title\s*\{[^}]*font-style:\s*italic/);
   assert.match(rendererStyles, /\.tab\[data-loaded-state="unloaded"\] \.tab-title/);
+  assert.match(rendererStyles, /color:\s*var\(--muted\)/);
 });
 
 test("electron tab controller attaches only the active WebContentsView", () => {
