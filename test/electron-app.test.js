@@ -51,6 +51,18 @@ test("electron main window returns focus to the active ChatGPT view when refocus
   assert.match(mainSource, /tabController\.focusActiveTab\(\)/);
 });
 
+test("electron main process registers Win+Enter to focus the app and open a new tab", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+
+  assert.match(mainSource, /globalShortcut/);
+  assert.match(mainSource, /const NEW_TAB_SHORTCUT = "Super\+Enter";/);
+  assert.match(mainSource, /function registerNewTabShortcut\(\)/);
+  assert.match(mainSource, /globalShortcut\.register\(NEW_TAB_SHORTCUT, \(\) => \{/);
+  assert.match(mainSource, /openNewTabInMainWindow\(\)/);
+  assert.match(mainSource, /app\.on\("will-quit", \(\) => \{/);
+  assert.match(mainSource, /globalShortcut\.unregister\(NEW_TAB_SHORTCUT\)/);
+});
+
 test("electron main process opens a new tab from a second-instance command argument", () => {
   const mainSource = readRepoFile("electron", "main.js");
 
@@ -63,14 +75,9 @@ test("electron main process opens a new tab from a second-instance command argum
   assert.match(mainSource, /focusMainWindow\(\)/);
 });
 
-test("AutoHotkey launcher asks Electron to create the tab instead of sending Ctrl+T", () => {
-  const script = readRepoFile("ChatGPTMultitab.ahk");
-
-  assert.match(script, /#Enter::OpenChatGPTMultitabNewTab\(\)/);
-  assert.match(script, /--new-tab/);
-  assert.match(script, /ProcessGetPath\(WinGetPID\("ahk_id " hwnd\)\)/);
-  assert.match(script, /Run .*NEW_TAB_ARG/);
-  assert.doesNotMatch(script, /Send\s+["']?\^t/i);
+test("repo no longer ships the AutoHotkey launcher path", () => {
+  assert.equal(fs.existsSync(path.join(repoRoot, "ChatGPTMultitab.ahk")), false);
+  assert.equal(fs.existsSync(path.join(repoRoot, "favicon-inverted.ico")), false);
 });
 
 test("electron app uses the inverted PNG logo", () => {
@@ -178,7 +185,6 @@ test("electron main process does not handle tab shortcuts a second time", () => 
 test("electron main process does not register duplicate global tab shortcuts", () => {
   const mainSource = readRepoFile("electron", "main.js");
 
-  assert.doesNotMatch(mainSource, /globalShortcut/);
   assert.doesNotMatch(mainSource, /CommandOrControl\+T/);
   assert.doesNotMatch(mainSource, /CommandOrControl\+W/);
   assert.doesNotMatch(mainSource, /registerFocusedWindowShortcuts/);
@@ -200,7 +206,6 @@ test("only the Electron tab controller owns Ctrl+T and Ctrl+W shortcuts", () => 
   assert.match(controllerSource, /controller\.closeTab\(tab\.id\)/);
 
   assert.doesNotMatch(nonControllerSource, /before-input-event/);
-  assert.doesNotMatch(nonControllerSource, /globalShortcut/);
   assert.doesNotMatch(nonControllerSource, /CommandOrControl\+(?:T|W)/);
   assert.doesNotMatch(nonControllerSource, /event\.key\s*={2,3}\s*["'][tTwW]["']/);
   assert.doesNotMatch(

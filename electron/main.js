@@ -3,6 +3,7 @@ const path = require("node:path");
 const {
   app,
   BrowserWindow,
+  globalShortcut,
   WebContentsView,
   ipcMain,
   session,
@@ -14,6 +15,7 @@ const TOP_BAR_HEIGHT = 42;
 const SESSION_FILE_NAME = "chatgpt-multitab-session.json";
 const APP_ICON_FILE = "favicon-inverted.png";
 const NEW_TAB_ARG = "--new-tab";
+const NEW_TAB_SHORTCUT = "Super+Enter";
 
 let mainWindow = null;
 let tabController = null;
@@ -96,6 +98,12 @@ function handleOpenRequest(argv) {
   }
 
   return openNewTabInMainWindow();
+}
+
+function registerNewTabShortcut() {
+  globalShortcut.register(NEW_TAB_SHORTCUT, () => {
+    openNewTabInMainWindow();
+  });
 }
 
 function createChatView() {
@@ -200,6 +208,7 @@ if (!gotSingleInstanceLock) {
     });
 
     createMainWindow();
+    registerNewTabShortcut();
 
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -208,6 +217,10 @@ if (!gotSingleInstanceLock) {
     });
   });
 }
+
+app.on("will-quit", () => {
+  globalShortcut.unregister(NEW_TAB_SHORTCUT);
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
