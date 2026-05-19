@@ -8,6 +8,8 @@
   --active: oklch(60% 0.12 205);
   --active-soft: oklch(92% 0.035 205);
   --danger: oklch(54% 0.16 28);
+  --unloaded: oklch(53% 0.07 78);
+  --unloaded-soft: oklch(93% 0.025 78);
 }
 
 * {
@@ -81,6 +83,16 @@ body {
   background: var(--panel);
   border-color: color-mix(in oklch, var(--active), var(--line) 45%);
   box-shadow: inset 0 3px 0 var(--active);
+}
+
+.tab[data-loaded-state="unloaded"] {
+  background: color-mix(in oklch, var(--unloaded-soft), var(--panel) 28%);
+  border-color: color-mix(in oklch, var(--unloaded), var(--line) 54%);
+}
+
+.tab[data-loaded-state="unloaded"] .tab-title {
+  color: var(--unloaded);
+  font-style: italic;
 }
 
 .tab-title {

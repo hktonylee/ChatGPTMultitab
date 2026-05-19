@@ -18,6 +18,7 @@ function renderTabs(state) {
     tabButton.className = "tab";
     tabButton.type = "button";
     tabButton.dataset.tabId = String(tab.id);
+    tabButton.dataset.loadedState = tab.isUnloaded ? "unloaded" : "loaded";
     tabButton.id = `tab-${tab.id}`;
     tabButton.setAttribute("role", "tab");
     tabButton.setAttribute("aria-selected", String(tab.id === state.activeTabId));

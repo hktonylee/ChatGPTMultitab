@@ -226,6 +226,15 @@ test("renderer closes a tab on double click", () => {
   assert.match(rendererSource, /window\.chatgptTabs\.closeTab\(tabId\);/);
 });
 
+test("renderer marks unloaded tabs with a distinct tab strip state", () => {
+  const rendererSource = readRepoFile("electron", "renderer.js");
+  const rendererStyles = readRepoFile("electron", "renderer.css");
+
+  assert.match(rendererSource, /tabButton\.dataset\.loadedState = tab\.isUnloaded \? "unloaded" : "loaded";/);
+  assert.match(rendererStyles, /\.tab\[data-loaded-state="unloaded"\]/);
+  assert.match(rendererStyles, /\.tab\[data-loaded-state="unloaded"\] \.tab-title/);
+});
+
 test("electron tab controller attaches only the active WebContentsView", () => {
   const {
     createElectronTabController,
