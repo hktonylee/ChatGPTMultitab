@@ -7,13 +7,20 @@ const DEFAULT_CONTENT_BOUNDS = Object.freeze({
   width: 1200,
   height: 758,
 });
+const INITIAL_LOADED_TAB_LIMIT = 3;
 
 function serializeTab(tab) {
-  return {
+  const tabState = {
     id: tab.id,
     title: tab.title,
     url: tab.url,
   };
+
+  if (tab.isUnloaded === true) {
+    tabState.isUnloaded = true;
+  }
+
+  return tabState;
 }
 
 function normalizeBounds(bounds) {
@@ -47,6 +54,25 @@ function createElectronTabController({
   let nextTabId = 1;
   const tabs = [];
 
+  function getInitiallyLoadedTabIds(tabStates, activeId) {
+    const loadedTabIds = new Set();
+    const activeTab = tabStates.find((tab) => tab.id === activeId);
+
+    if (activeTab) {
+      loadedTabIds.add(activeTab.id);
+    }
+
+    for (let index = tabStates.length - 1; index >= 0; index -= 1) {
+      if (loadedTabIds.size >= INITIAL_LOADED_TAB_LIMIT) {
+        break;
+      }
+
+      loadedTabIds.add(tabStates[index].id);
+    }
+
+    return loadedTabIds;
+  }
+
   function emitStateChange() {
     onStateChange(controller.getState());
   }
@@ -56,7 +82,13 @@ function createElectronTabController({
   }
 
   function attachView(tab) {
-    if (!tab || attachedView === tab.view) {
+    if (!tab) {
+      return;
+    }
+
+    const view = ensureTabLoaded(tab);
+
+    if (attachedView === view) {
       return;
     }
 
@@ -64,10 +96,10 @@ function createElectronTabController({
       contentView.removeChildView(attachedView);
     }
 
-    tab.view.setBounds(bounds);
-    contentView.addChildView(tab.view);
-    tab.view.webContents.focus?.();
-    attachedView = tab.view;
+    view.setBounds(bounds);
+    contentView.addChildView(view);
+    view.webContents.focus?.();
+    attachedView = view;
   }
 
   function activateAdjacentTab(direction) {
@@ -117,31 +149,52 @@ function createElectronTabController({
     }
   }
 
-  function createManagedTab(tabState) {
+  function createTabView(tab) {
+    const view = createView();
+
+    if (typeof view.webContents?.loadURL !== "function") {
+      throw new TypeError("created view must expose webContents.loadURL");
+    }
+
+    view.webContents.loadURL(tab.url);
+    view.webContents.on?.("page-title-updated", (_event, title) => {
+      controller.updateTab(tab.id, { title });
+    });
+    view.webContents.on?.("did-navigate", (_event, url) => {
+      controller.updateTab(tab.id, { url });
+    });
+    view.webContents.on?.("did-navigate-in-page", (_event, url) => {
+      controller.updateTab(tab.id, { url });
+    });
+    view.webContents.on?.("before-input-event", (event, input) => {
+      handleTabShortcut(tab, event, input);
+    });
+
+    return view;
+  }
+
+  function ensureTabLoaded(tab) {
+    if (!tab.view) {
+      tab.view = createTabView(tab);
+      tab.isUnloaded = false;
+    }
+
+    return tab.view;
+  }
+
+  function createManagedTab(tabState, options = {}) {
+    const shouldLoad = options.load !== false;
     const tab = {
       id: tabState.id,
       title: tabState.title || DEFAULT_CHAT_TITLE,
       url: tabState.url || DEFAULT_CHAT_URL,
-      view: createView(),
+      view: null,
+      isUnloaded: !shouldLoad,
     };
 
-    if (typeof tab.view.webContents?.loadURL !== "function") {
-      throw new TypeError("created view must expose webContents.loadURL");
+    if (shouldLoad) {
+      ensureTabLoaded(tab);
     }
-
-    tab.view.webContents.loadURL(tab.url);
-    tab.view.webContents.on?.("page-title-updated", (_event, title) => {
-      controller.updateTab(tab.id, { title });
-    });
-    tab.view.webContents.on?.("did-navigate", (_event, url) => {
-      controller.updateTab(tab.id, { url });
-    });
-    tab.view.webContents.on?.("did-navigate-in-page", (_event, url) => {
-      controller.updateTab(tab.id, { url });
-    });
-    tab.view.webContents.on?.("before-input-event", (event, input) => {
-      handleTabShortcut(tab, event, input);
-    });
 
     return tab;
   }
@@ -152,9 +205,16 @@ function createElectronTabController({
 
   function loadInitialState(state) {
     const session = sanitizeStoredTabState(state);
+    const initiallyLoadedTabIds = getInitiallyLoadedTabIds(session.tabs, session.activeTabId);
     closedTabs = session.closedTabs;
     activeTabId = session.activeTabId;
-    session.tabs.forEach((tabState) => tabs.push(createManagedTab(tabState)));
+    session.tabs.forEach((tabState) => {
+      tabs.push(
+        createManagedTab(tabState, {
+          load: initiallyLoadedTabIds.has(tabState.id),
+        }),
+      );
+    });
     updateNextTabId();
     attachView(tabs.find((tab) => tab.id === activeTabId) || tabs[0]);
   }
@@ -201,12 +261,12 @@ function createElectronTabController({
       const [tab] = tabs.splice(index, 1);
       closedTabs.push(serializeTab(tab));
 
-      if (attachedView === tab.view) {
+      if (tab.view && attachedView === tab.view) {
         contentView.removeChildView(tab.view);
         attachedView = null;
       }
 
-      tab.view.webContents?.close?.();
+      tab.view?.webContents?.close?.();
 
       if (activeTabId === tab.id) {
         let nextTab = tabs[index] || tabs[index - 1] || tabs[0];
@@ -263,7 +323,7 @@ function createElectronTabController({
 
     setBounds(nextBounds) {
       bounds = normalizeBounds(nextBounds);
-      tabs.find((tab) => tab.id === activeTabId)?.view.setBounds(bounds);
+      tabs.find((tab) => tab.id === activeTabId)?.view?.setBounds(bounds);
     },
 
     focusActiveTab() {
@@ -273,7 +333,7 @@ function createElectronTabController({
         return null;
       }
 
-      tab.view.webContents.focus?.();
+      ensureTabLoaded(tab).webContents.focus?.();
       return tab;
     },
 

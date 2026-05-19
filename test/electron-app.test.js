@@ -24,7 +24,7 @@ test("electron main process wraps ChatGPT pages in WebContentsView instances", (
   assert.match(mainSource, /WebContentsView/);
   assert.match(mainSource, /new WebContentsView\(/);
   assert.match(tabControllerSource, /contentView\.addChildView/);
-  assert.match(tabControllerSource, /tab\.view\.webContents\.loadURL\(tab\.url\)/);
+  assert.match(tabControllerSource, /\.webContents\.loadURL\(tab\.url\)/);
   assert.doesNotMatch(mainSource, /BrowserView/);
   assert.doesNotMatch(mainSource, /<iframe/i);
 });
@@ -282,6 +282,126 @@ test("electron tab controller attaches only the active WebContentsView", () => {
 
   assert.equal(attachedViews.length, 1);
   assert.equal(attachedViews[0], firstView);
+});
+
+test("electron tab controller offloads restored startup tabs beyond the latest three", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const attachedViews = [];
+  const loadedUrls = [];
+  const contentView = {
+    addChildView(view) {
+      attachedViews.push(view);
+    },
+    removeChildView(view) {
+      const index = attachedViews.indexOf(view);
+      if (index >= 0) {
+        attachedViews.splice(index, 1);
+      }
+    },
+  };
+
+  function createView() {
+    const view = {
+      setBounds() {},
+      webContents: {
+        loadURL(url) {
+          loadedUrls.push(url);
+        },
+        on() {},
+        close() {},
+        focus() {},
+      },
+    };
+
+    return view;
+  }
+
+  const controller = createElectronTabController({
+    contentView,
+    createView,
+    initialState: {
+      activeTabId: 5,
+      closedTabs: [],
+      tabs: [
+        { id: 1, title: "One", url: "https://chatgpt.com/c/one" },
+        { id: 2, title: "Two", url: "https://chatgpt.com/c/two" },
+        { id: 3, title: "Three", url: "https://chatgpt.com/c/three" },
+        { id: 4, title: "Four", url: "https://chatgpt.com/c/four" },
+        { id: 5, title: "Five", url: "https://chatgpt.com/c/five" },
+      ],
+    },
+  });
+
+  assert.deepEqual(loadedUrls, [
+    "https://chatgpt.com/c/three",
+    "https://chatgpt.com/c/four",
+    "https://chatgpt.com/c/five",
+  ]);
+  assert.deepEqual(controller.getState().tabs, [
+    { id: 1, title: "One", url: "https://chatgpt.com/c/one", isUnloaded: true },
+    { id: 2, title: "Two", url: "https://chatgpt.com/c/two", isUnloaded: true },
+    { id: 3, title: "Three", url: "https://chatgpt.com/c/three" },
+    { id: 4, title: "Four", url: "https://chatgpt.com/c/four" },
+    { id: 5, title: "Five", url: "https://chatgpt.com/c/five" },
+  ]);
+  assert.equal(attachedViews.length, 1);
+  assert.equal(attachedViews[0], controller.getActiveTab().view);
+
+  const firstTab = controller.activateTab(1);
+
+  assert.equal(firstTab.id, 1);
+  assert.equal(loadedUrls.at(-1), "https://chatgpt.com/c/one");
+  assert.equal(controller.getState().tabs[0].isUnloaded, undefined);
+  assert.equal(attachedViews.length, 1);
+  assert.equal(attachedViews[0], firstTab.view);
+});
+
+test("electron tab controller counts the active restored tab toward the startup load limit", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const loadedUrls = [];
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL(url) {
+          loadedUrls.push(url);
+        },
+        on() {},
+        close() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({
+    contentView,
+    createView,
+    initialState: {
+      activeTabId: 1,
+      closedTabs: [],
+      tabs: [
+        { id: 1, title: "One", url: "https://chatgpt.com/c/one" },
+        { id: 2, title: "Two", url: "https://chatgpt.com/c/two" },
+        { id: 3, title: "Three", url: "https://chatgpt.com/c/three" },
+        { id: 4, title: "Four", url: "https://chatgpt.com/c/four" },
+        { id: 5, title: "Five", url: "https://chatgpt.com/c/five" },
+      ],
+    },
+  });
+
+  assert.deepEqual(loadedUrls, [
+    "https://chatgpt.com/c/one",
+    "https://chatgpt.com/c/four",
+    "https://chatgpt.com/c/five",
+  ]);
+  assert.equal(controller.getState().tabs.filter((tab) => tab.isUnloaded !== true).length, 3);
 });
 
 test("electron tab controller focuses the visible WebContentsView when the active tab changes", () => {
