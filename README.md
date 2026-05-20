@@ -6,6 +6,8 @@
 
 It keeps multiple ChatGPT pages in one desktop window. Each ChatGPT tab runs as a real Electron web contents view.
 
+This can greatly improve working across multiple ChatGPT sessions: switching between tabs is lightning fast.
+
 ![ChatGPT Multitab screenshot](docs/Screen1.png)
 
 ## What it does
