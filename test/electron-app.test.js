@@ -416,6 +416,62 @@ test("electron tab controller counts the active restored tab toward the startup 
   assert.equal(controller.getState().tabs.filter((tab) => tab.isUnloaded !== true).length, 3);
 });
 
+test("electron tab controller unloads inactive tabs after thirty minutes", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  let currentTime = 0;
+  const intervalHandlers = [];
+  const closedViews = [];
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    const view = {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on() {},
+        close() {
+          closedViews.push(view);
+        },
+        focus() {},
+      },
+    };
+
+    return view;
+  }
+
+  const controller = createElectronTabController({
+    contentView,
+    createView,
+    now: () => currentTime,
+    setIntervalFn(handler) {
+      intervalHandlers.push(handler);
+      return intervalHandlers.length;
+    },
+  });
+  const firstTab = controller.getActiveTab();
+  const secondTab = controller.createTab("https://chatgpt.com/c/second");
+  const firstView = firstTab.view;
+
+  currentTime = 30 * 60 * 1000;
+  intervalHandlers[0]();
+
+  assert.equal(closedViews.length, 1);
+  assert.equal(closedViews[0], firstView);
+  assert.equal(firstTab.view, null);
+  assert.equal(controller.getState().tabs[0].isUnloaded, true);
+  assert.equal(controller.getState().tabs[1].isUnloaded, undefined);
+  assert.equal(secondTab.view.webContents, controller.getActiveTab().view.webContents);
+
+  const reloadedFirstTab = controller.activateTab(firstTab.id);
+
+  assert.equal(controller.getState().tabs[0].isUnloaded, undefined);
+  assert.notEqual(reloadedFirstTab.view, closedViews[0]);
+});
+
 test("electron tab controller focuses the visible WebContentsView when the active tab changes", () => {
   const { createElectronTabController } = require("../src/electron-tabs");
 

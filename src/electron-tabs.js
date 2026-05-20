@@ -8,6 +8,8 @@ const DEFAULT_CONTENT_BOUNDS = Object.freeze({
   height: 758,
 });
 const INITIAL_LOADED_TAB_LIMIT = 3;
+const INACTIVE_UNLOAD_DELAY_MS = 30 * 60 * 1000;
+const INACTIVE_UNLOAD_CHECK_INTERVAL_MS = 60 * 1000;
 
 function serializeTab(tab) {
   const tabState = {
@@ -48,6 +50,10 @@ function createElectronTabController({
   createView,
   initialState,
   initialBounds = DEFAULT_CONTENT_BOUNDS,
+  inactiveUnloadDelayMs = INACTIVE_UNLOAD_DELAY_MS,
+  inactiveUnloadCheckIntervalMs = INACTIVE_UNLOAD_CHECK_INTERVAL_MS,
+  now = () => Date.now(),
+  setIntervalFn = setInterval,
   onStateChange = () => {},
 } = {}) {
   if (!contentView || typeof contentView.addChildView !== "function") {
@@ -98,6 +104,7 @@ function createElectronTabController({
     }
 
     const view = ensureTabLoaded(tab);
+    tab.lastActiveAt = now();
 
     if (attachedView === view) {
       return;
@@ -201,6 +208,7 @@ function createElectronTabController({
       url: tabState.url || DEFAULT_CHAT_URL,
       view: null,
       isUnloaded: !shouldLoad,
+      lastActiveAt: now(),
     };
 
     if (shouldLoad) {
@@ -208,6 +216,35 @@ function createElectronTabController({
     }
 
     return tab;
+  }
+
+  function unloadInactiveTabs() {
+    const currentTime = now();
+    let unloadedAnyTab = false;
+
+    tabs.forEach((tab) => {
+      if (tab.id === activeTabId || !tab.view || tab.isUnloaded === true) {
+        return;
+      }
+
+      if (currentTime - tab.lastActiveAt < inactiveUnloadDelayMs) {
+        return;
+      }
+
+      if (attachedView === tab.view) {
+        contentView.removeChildView(tab.view);
+        attachedView = null;
+      }
+
+      tab.view.webContents.close?.();
+      tab.view = null;
+      tab.isUnloaded = true;
+      unloadedAnyTab = true;
+    });
+
+    if (unloadedAnyTab) {
+      emitStateChange();
+    }
   }
 
   function createDefaultTab() {
@@ -365,11 +402,14 @@ function createElectronTabController({
   };
 
   loadInitialState(initialState);
+  const inactivityInterval = setIntervalFn(unloadInactiveTabs, inactiveUnloadCheckIntervalMs);
+  inactivityInterval?.unref?.();
   return controller;
 }
 
 module.exports = {
   DEFAULT_CHAT_URL,
   DEFAULT_CONTENT_BOUNDS,
+  INACTIVE_UNLOAD_DELAY_MS,
   createElectronTabController,
 };
