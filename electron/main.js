@@ -88,7 +88,7 @@ function openNewTabInMainWindow() {
   }
 
   focusMainWindow();
-  return tabController.createTab();
+  return tabController.createTabForNewTabRequest();
 }
 
 function handleOpenRequest(argv) {

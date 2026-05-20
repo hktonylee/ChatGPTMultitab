@@ -51,7 +51,7 @@ test("electron main window returns focus to the active ChatGPT view when refocus
   assert.match(mainSource, /tabController\.focusActiveTab\(\)/);
 });
 
-test("electron main process registers Win+C to focus the app and open a new tab", () => {
+test("electron main process registers Win+C to focus the app and open or reuse a new-tab target", () => {
   const mainSource = readRepoFile("electron", "main.js");
 
   assert.match(mainSource, /globalShortcut/);
@@ -61,6 +61,7 @@ test("electron main process registers Win+C to focus the app and open a new tab"
   assert.match(mainSource, /NEW_TAB_SHORTCUTS\.forEach\(\(shortcut\) => \{/);
   assert.match(mainSource, /const registered = globalShortcut\.register\(shortcut, \(\) => \{/);
   assert.match(mainSource, /openNewTabInMainWindow\(\)/);
+  assert.match(mainSource, /tabController\.createTabForNewTabRequest\(\)/);
   assert.match(mainSource, /console\.warn\(`Failed to register global shortcut \$\{shortcut\}`\)/);
   assert.match(mainSource, /app\.on\("will-quit", \(\) => \{/);
   assert.match(mainSource, /NEW_TAB_SHORTCUTS\.forEach\(\(shortcut\) => globalShortcut\.unregister\(shortcut\)\)/);
@@ -74,7 +75,7 @@ test("electron main process opens a new tab from a second-instance command argum
   assert.match(mainSource, /app\.on\("second-instance", \(_event, argv\) => \{/);
   assert.match(mainSource, /handleOpenRequest\(argv\)/);
   assert.match(mainSource, /argv\.includes\(NEW_TAB_ARG\)/);
-  assert.match(mainSource, /tabController\.createTab\(\)/);
+  assert.match(mainSource, /tabController\.createTabForNewTabRequest\(\)/);
   assert.match(mainSource, /focusMainWindow\(\)/);
 });
 
@@ -495,6 +496,57 @@ test("electron tab controller can restore focus to the active WebContentsView", 
   controller.focusActiveTab();
 
   assert.equal(focusedViews.at(-1), firstTab.view);
+});
+
+test("electron tab controller reuses the visible main ChatGPT tab for Win+C new-tab requests", () => {
+  const { createElectronTabController, DEFAULT_CHAT_URL } = require("../src/electron-tabs");
+
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+  const loadedUrls = [];
+  const focusedViews = [];
+
+  function createView() {
+    const view = {
+      setBounds() {},
+      webContents: {
+        loadURL(url) {
+          loadedUrls.push(url);
+        },
+        on() {},
+        focus() {
+          focusedViews.push(view);
+        },
+      },
+    };
+
+    return view;
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const firstTab = controller.getActiveTab();
+
+  assert.equal(firstTab.url, DEFAULT_CHAT_URL);
+  assert.equal(typeof controller.createTabForNewTabRequest, "function");
+
+  const reusedTab = controller.createTabForNewTabRequest();
+
+  assert.equal(reusedTab, firstTab);
+  assert.equal(controller.getState().tabs.length, 1);
+  assert.equal(focusedViews.at(-1), firstTab.view);
+  assert.deepEqual(loadedUrls, [DEFAULT_CHAT_URL]);
+
+  controller.updateTab(firstTab.id, { url: "https://chatgpt.com/c/existing" });
+
+  const createdTab = controller.createTabForNewTabRequest();
+
+  assert.notEqual(createdTab.id, firstTab.id);
+  assert.equal(createdTab.url, DEFAULT_CHAT_URL);
+  assert.equal(controller.getState().tabs.length, 2);
+  assert.equal(controller.getState().activeTabId, createdTab.id);
+  assert.deepEqual(loadedUrls, [DEFAULT_CHAT_URL, DEFAULT_CHAT_URL]);
 });
 
 test("electron tab controller replaces the last closed tab with a new default tab", () => {

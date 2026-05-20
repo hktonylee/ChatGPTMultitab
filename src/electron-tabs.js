@@ -32,6 +32,17 @@ function normalizeBounds(bounds) {
   };
 }
 
+function isMainChatUrl(url) {
+  try {
+    const parsedUrl = new URL(url);
+    const defaultUrl = new URL(DEFAULT_CHAT_URL);
+
+    return parsedUrl.origin === defaultUrl.origin && parsedUrl.pathname === "/";
+  } catch (_error) {
+    return false;
+  }
+}
+
 function createElectronTabController({
   contentView,
   createView,
@@ -236,6 +247,17 @@ function createElectronTabController({
       attachView(tab);
       emitStateChange();
       return tab;
+    },
+
+    createTabForNewTabRequest() {
+      const activeTab = controller.getActiveTab();
+
+      if (isMainChatUrl(activeTab?.url)) {
+        controller.focusActiveTab();
+        return activeTab;
+      }
+
+      return controller.createTab();
     },
 
     activateTab(id) {
