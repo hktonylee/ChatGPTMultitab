@@ -2,21 +2,22 @@
 
 `ChatGPT Multitab` is a local Electron app for using the official ChatGPT web UI with workspace tab support.
 
-2026-05-08: Changed from a Chrome plugin into an Electron app.
-
-It keeps multiple ChatGPT pages in one desktop window. Each ChatGPT tab runs as a real Electron web contents view.
-
-This can greatly improve working across multiple ChatGPT sessions: switching between tabs is lightning fast.
+It is lightning fast and provides 100% of the official ChatGPT web UI. Because even the official native ChatGPT app does not have all the features of the web UI.
 
 ![ChatGPT Multitab screenshot](docs/Screen1.png)
 
+## Why uses this?
+
+- Official web UI has the fullest features. But we will rely on the browser to manage multiple instances. It does not have global hotkey to create a new tab and start asking questions.
+- Official native app has better performance. But the functionality is lagging from the official UI. And switching between chat session is slow.
+
 ## What it does
 
-- Opens ChatGPT in a dedicated desktop window.
-- Keeps multiple ChatGPT conversations available as workspace tabs.
-- Runs each ChatGPT page in an Electron web contents view.
+- Opens official ChatGPT web UI in a dedicated desktop window.
+- Global hotkey to open tab and start query. Since the page is preloaded, it is faster than using browser or official UI. Typically can start typing prompt in 1-2 seconds.
 - Persists open and recently closed tabs in Electron user data.
 - Supports `Ctrl+T` or `Cmd+T` for a new tab, `Ctrl+W` or `Cmd+W` to close the active tab, and `Ctrl+Tab` / `Ctrl+Shift+Tab` or `Cmd+Tab` / `Cmd+Shift+Tab` for tab switching.
+- Look like a native app. Use like a native app. But it is actually browsers.
 
 You sign in to ChatGPT inside the Electron app. Electron keeps its own browser session, separate from Chrome or Edge.
 
