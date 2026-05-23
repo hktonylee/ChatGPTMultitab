@@ -4,6 +4,8 @@ const newTabButton = document.querySelector(".new-tab");
 const restoreTabButton = document.querySelector(".restore-tab");
 const openExternalButton = document.querySelector(".open-external");
 
+const TAB_LIST_WHEEL_SCROLL_MULTIPLIER = 3;
+
 let currentState = {
   activeTabId: 1,
   closedTabs: [],
@@ -116,7 +118,7 @@ tabList.addEventListener(
 
     event.preventDefault();
     tabList.scrollBy({
-      left: event.deltaY,
+      left: event.deltaY * TAB_LIST_WHEEL_SCROLL_MULTIPLIER,
       behavior: "smooth",
     });
   },
