@@ -258,8 +258,9 @@ test("renderer keeps readable tab widths in a horizontally scrollable tab strip"
   assert.match(rendererStyles, /\.tab\s*\{[^}]*flex:\s*0 0 150px/s);
   assert.match(rendererStyles, /\.tab\s*\{[^}]*max-width:\s*150px/s);
   assert.match(rendererStyles, /\.tab-cluster::before,\s*\.tab-cluster::after/s);
-  assert.match(rendererStyles, /\.tab-cluster::after\s*\{[^}]*width:\s*36px/s);
-  assert.match(rendererStyles, /\.tab-cluster::after\s*\{[^}]*right:\s*33px/s);
+  assert.match(rendererStyles, /\.tab-cluster::after\s*\{[^}]*width:\s*56px/s);
+  assert.match(rendererStyles, /\.tab-cluster::after\s*\{[^}]*right:\s*30px/s);
+  assert.match(rendererStyles, /\.tab-cluster::after\s*\{[^}]*var\(--page\) 0 14px/s);
   assert.match(rendererStyles, /\.tab-cluster\[data-overflow-left="true"\]::before/s);
   assert.match(rendererStyles, /\.tab-cluster\[data-overflow-right="true"\]::after/s);
   assert.match(rendererStyles, /\.tab-actions \.toolbar-button\s*\{[^}]*height:\s*31px/s);

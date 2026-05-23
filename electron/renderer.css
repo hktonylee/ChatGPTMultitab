@@ -70,9 +70,9 @@ body {
 }
 
 .tab-cluster::after {
-  right: 33px;
-  width: 36px;
-  background: linear-gradient(to left, var(--page) 18%, transparent);
+  right: 30px;
+  width: 56px;
+  background: linear-gradient(to left, var(--page) 0 14px, transparent);
 }
 
 .tab-cluster[data-overflow-left="true"]::before,
