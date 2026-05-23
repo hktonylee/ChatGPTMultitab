@@ -511,6 +511,60 @@ test("electron tab controller unloads inactive tabs after thirty minutes", () =>
   assert.notEqual(reloadedFirstTab.view, closedViews[0]);
 });
 
+test("electron tab controller keeps unloaded tab title until ChatGPT publishes a real title", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  let currentTime = 0;
+  const intervalHandlers = [];
+  const titleHandlers = [];
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on(eventName, handler) {
+          if (eventName === "page-title-updated") {
+            titleHandlers.push(handler);
+          }
+        },
+        close() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({
+    contentView,
+    createView,
+    now: () => currentTime,
+    setIntervalFn(handler) {
+      intervalHandlers.push(handler);
+      return intervalHandlers.length;
+    },
+  });
+  const firstTab = controller.getActiveTab();
+
+  controller.updateTab(firstTab.id, { title: "Saved conversation" });
+  controller.createTab("https://chatgpt.com/c/second");
+
+  currentTime = 30 * 60 * 1000;
+  intervalHandlers[0]();
+  controller.activateTab(firstTab.id);
+
+  titleHandlers.at(-1)(undefined, "ChatGPT");
+
+  assert.equal(controller.getState().tabs[0].title, "Saved conversation");
+
+  titleHandlers.at(-1)(undefined, "Better conversation title");
+
+  assert.equal(controller.getState().tabs[0].title, "Better conversation title");
+});
+
 test("electron tab controller focuses the visible WebContentsView when the active tab changes", () => {
   const { createElectronTabController } = require("../src/electron-tabs");
 

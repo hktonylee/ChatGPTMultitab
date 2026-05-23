@@ -176,7 +176,14 @@ function createElectronTabController({
 
     view.webContents.loadURL(tab.url);
     view.webContents.on?.("page-title-updated", (_event, title) => {
-      controller.updateTab(tab.id, { title });
+      const normalizedTitle = typeof title === "string" ? title.trim() : "";
+
+      if (tab.isWaitingForRestoredTitle && normalizedTitle === DEFAULT_CHAT_TITLE) {
+        return;
+      }
+
+      tab.isWaitingForRestoredTitle = false;
+      controller.updateTab(tab.id, { title: normalizedTitle });
     });
     view.webContents.on?.("did-navigate", (_event, url) => {
       controller.updateTab(tab.id, { url });
@@ -193,6 +200,7 @@ function createElectronTabController({
 
   function ensureTabLoaded(tab) {
     if (!tab.view) {
+      tab.isWaitingForRestoredTitle = tab.isUnloaded === true;
       tab.view = createTabView(tab);
       tab.isUnloaded = false;
     }
@@ -208,6 +216,7 @@ function createElectronTabController({
       url: tabState.url || DEFAULT_CHAT_URL,
       view: null,
       isUnloaded: !shouldLoad,
+      isWaitingForRestoredTitle: false,
       lastActiveAt: now(),
     };
 
