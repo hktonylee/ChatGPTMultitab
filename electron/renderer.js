@@ -107,8 +107,10 @@ tabList.addEventListener(
     }
 
     event.preventDefault();
-    tabList.scrollLeft += event.deltaY;
-    updateTabOverflowIndicators();
+    tabList.scrollBy({
+      left: event.deltaY,
+      behavior: "smooth",
+    });
   },
   { passive: false },
 );

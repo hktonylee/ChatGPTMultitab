@@ -258,7 +258,8 @@ test("renderer keeps readable tab widths in a horizontally scrollable tab strip"
   assert.match(rendererSource, /tabCluster\.dataset\.overflowRight = String/);
   assert.match(rendererSource, /tabList\.addEventListener\(\s*"wheel"/);
   assert.match(rendererSource, /tabList\.addEventListener\("scroll", updateTabOverflowIndicators\);/);
-  assert.match(rendererSource, /tabList\.scrollLeft \+= event\.deltaY/);
+  assert.match(rendererSource, /tabList\.scrollBy\(\{\s*left: event\.deltaY,\s*behavior: "smooth",\s*\}\)/s);
+  assert.doesNotMatch(rendererSource, /tabList\.scrollLeft \+= event\.deltaY/);
 });
 
 test("electron tab controller attaches only the active WebContentsView", () => {
