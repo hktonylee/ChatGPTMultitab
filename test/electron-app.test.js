@@ -227,6 +227,16 @@ test("renderer closes a tab on double click", () => {
   assert.match(rendererSource, /window\.chatgptTabs\.closeTab\(tabId\);/);
 });
 
+test("renderer prevents Windows autoscroll before middle-click closing a tab", () => {
+  const rendererSource = readRepoFile("electron", "renderer.js");
+
+  assert.match(rendererSource, /tabList\.addEventListener\("mousedown", \(event\) => \{/);
+  assert.match(rendererSource, /if \(event\.button !== 1\) \{/);
+  assert.match(rendererSource, /event\.preventDefault\(\);/);
+  assert.match(rendererSource, /tabList\.addEventListener\("auxclick"/);
+  assert.match(rendererSource, /window\.chatgptTabs\.closeTab\(tabId\);/);
+});
+
 test("renderer marks unloaded tabs with a distinct tab strip state", () => {
   const rendererSource = readRepoFile("electron", "renderer.js");
   const rendererStyles = readRepoFile("electron", "renderer.css");

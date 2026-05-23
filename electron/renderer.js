@@ -77,6 +77,14 @@ tabList.addEventListener("click", (event) => {
   window.chatgptTabs.activateTab(tabId);
 });
 
+tabList.addEventListener("mousedown", (event) => {
+  if (event.button !== 1) {
+    return;
+  }
+
+  event.preventDefault();
+});
+
 tabList.addEventListener("auxclick", (event) => {
   if (event.button !== 1) {
     return;
