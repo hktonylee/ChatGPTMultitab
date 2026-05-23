@@ -37,6 +37,11 @@ function renderTabs(state) {
     tabList.append(tabButton);
   });
 
+  tabList.querySelector(".tab[aria-selected=\"true\"]")?.scrollIntoView({
+    block: "nearest",
+    inline: "nearest",
+  });
+
   restoreTabButton.disabled = state.closedTabs.length === 0;
 }
 
@@ -81,6 +86,19 @@ tabList.addEventListener("dblclick", (event) => {
     window.chatgptTabs.closeTab(tabId);
   }
 });
+
+tabList.addEventListener(
+  "wheel",
+  (event) => {
+    if (event.deltaY === 0 || tabList.scrollWidth <= tabList.clientWidth) {
+      return;
+    }
+
+    event.preventDefault();
+    tabList.scrollLeft += event.deltaY;
+  },
+  { passive: false },
+);
 
 document.addEventListener("keydown", (event) => {
   if (event.altKey || !(event.ctrlKey || event.metaKey)) {

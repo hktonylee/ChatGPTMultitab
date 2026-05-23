@@ -238,6 +238,18 @@ test("renderer marks unloaded tabs with a distinct tab strip state", () => {
   assert.match(rendererStyles, /color:\s*var\(--muted\)/);
 });
 
+test("renderer keeps readable tab widths in a horizontally scrollable tab strip", () => {
+  const rendererSource = readRepoFile("electron", "renderer.js");
+  const rendererStyles = readRepoFile("electron", "renderer.css");
+
+  assert.match(rendererStyles, /\.tab-list\s*\{[^}]*overflow-x:\s*auto/s);
+  assert.match(rendererStyles, /\.tab-list\s*\{[^}]*scrollbar-width:\s*thin/s);
+  assert.match(rendererStyles, /\.tab\s*\{[^}]*flex:\s*0 0 150px/s);
+  assert.match(rendererStyles, /\.tab\s*\{[^}]*max-width:\s*150px/s);
+  assert.match(rendererSource, /tabList\.addEventListener\(\s*"wheel"/);
+  assert.match(rendererSource, /tabList\.scrollLeft \+= event\.deltaY/);
+});
+
 test("electron tab controller attaches only the active WebContentsView", () => {
   const {
     createElectronTabController,
