@@ -71,6 +71,7 @@ body {
 
 .tab-cluster::after {
   right: 33px;
+  width: 36px;
   background: linear-gradient(to left, var(--page) 18%, transparent);
 }
 
