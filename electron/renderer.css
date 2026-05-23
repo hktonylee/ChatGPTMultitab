@@ -155,8 +155,10 @@ body {
 
 .toolbar-button {
   width: 30px;
-  height: 30px;
+  height: 31px;
+  margin-bottom: -1px;
   border: 1px solid transparent;
+  border-bottom: 0;
   border-radius: 6px 6px 0 0;
   background: transparent;
   color: var(--muted);
@@ -170,12 +172,6 @@ body {
 .toolbar-button:hover {
   background: var(--active-soft);
   color: var(--ink);
-}
-
-.tab-actions .toolbar-button {
-  height: 31px;
-  margin-bottom: -1px;
-  border-bottom: 0;
 }
 
 .toolbar-button:disabled {

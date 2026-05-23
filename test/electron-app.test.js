@@ -263,8 +263,10 @@ test("renderer keeps readable tab widths in a horizontally scrollable tab strip"
   assert.match(rendererStyles, /\.tab-cluster::after\s*\{[^}]*var\(--page\) 0 14px/s);
   assert.match(rendererStyles, /\.tab-cluster\[data-overflow-left="true"\]::before/s);
   assert.match(rendererStyles, /\.tab-cluster\[data-overflow-right="true"\]::after/s);
-  assert.match(rendererStyles, /\.tab-actions \.toolbar-button\s*\{[^}]*height:\s*31px/s);
-  assert.match(rendererStyles, /\.tab-actions \.toolbar-button\s*\{[^}]*margin-bottom:\s*-1px/s);
+  assert.match(rendererStyles, /\.toolbar-button\s*\{[^}]*height:\s*31px/s);
+  assert.match(rendererStyles, /\.toolbar-button\s*\{[^}]*margin-bottom:\s*-1px/s);
+  assert.match(rendererStyles, /\.toolbar-button\s*\{[^}]*border-bottom:\s*0/s);
+  assert.doesNotMatch(rendererStyles, /\.tab-actions \.toolbar-button\s*\{/);
   assert.match(rendererSource, /const tabCluster = document\.querySelector\("\.tab-cluster"\);/);
   assert.match(rendererSource, /function updateTabOverflowIndicators\(\)/);
   assert.match(rendererSource, /tabCluster\.dataset\.overflowLeft = String/);
