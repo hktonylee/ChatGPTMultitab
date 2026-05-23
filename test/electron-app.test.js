@@ -243,10 +243,21 @@ test("renderer keeps readable tab widths in a horizontally scrollable tab strip"
   const rendererStyles = readRepoFile("electron", "renderer.css");
 
   assert.match(rendererStyles, /\.tab-list\s*\{[^}]*overflow-x:\s*auto/s);
-  assert.match(rendererStyles, /\.tab-list\s*\{[^}]*scrollbar-width:\s*thin/s);
+  assert.match(rendererStyles, /\.tab-list\s*\{[^}]*scrollbar-width:\s*none/s);
+  assert.match(rendererStyles, /\.tab-list::-webkit-scrollbar\s*\{[^}]*display:\s*none/s);
   assert.match(rendererStyles, /\.tab\s*\{[^}]*flex:\s*0 0 150px/s);
   assert.match(rendererStyles, /\.tab\s*\{[^}]*max-width:\s*150px/s);
+  assert.match(rendererStyles, /\.tab-cluster::before,\s*\.tab-cluster::after/s);
+  assert.match(rendererStyles, /\.tab-cluster\[data-overflow-left="true"\]::before/s);
+  assert.match(rendererStyles, /\.tab-cluster\[data-overflow-right="true"\]::after/s);
+  assert.match(rendererStyles, /\.tab-actions \.toolbar-button\s*\{[^}]*height:\s*31px/s);
+  assert.match(rendererStyles, /\.tab-actions \.toolbar-button\s*\{[^}]*margin-bottom:\s*-1px/s);
+  assert.match(rendererSource, /const tabCluster = document\.querySelector\("\.tab-cluster"\);/);
+  assert.match(rendererSource, /function updateTabOverflowIndicators\(\)/);
+  assert.match(rendererSource, /tabCluster\.dataset\.overflowLeft = String/);
+  assert.match(rendererSource, /tabCluster\.dataset\.overflowRight = String/);
   assert.match(rendererSource, /tabList\.addEventListener\(\s*"wheel"/);
+  assert.match(rendererSource, /tabList\.addEventListener\("scroll", updateTabOverflowIndicators\);/);
   assert.match(rendererSource, /tabList\.scrollLeft \+= event\.deltaY/);
 });
 

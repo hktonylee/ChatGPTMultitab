@@ -1,3 +1,4 @@
+const tabCluster = document.querySelector(".tab-cluster");
 const tabList = document.querySelector(".tab-list");
 const newTabButton = document.querySelector(".new-tab");
 const restoreTabButton = document.querySelector(".restore-tab");
@@ -8,6 +9,16 @@ let currentState = {
   closedTabs: [],
   tabs: [],
 };
+
+function updateTabOverflowIndicators() {
+  const maxScrollLeft = tabList.scrollWidth - tabList.clientWidth;
+  const hasOverflow = maxScrollLeft > 1;
+
+  tabCluster.dataset.overflowLeft = String(hasOverflow && tabList.scrollLeft > 1);
+  tabCluster.dataset.overflowRight = String(
+    hasOverflow && tabList.scrollLeft < maxScrollLeft - 1,
+  );
+}
 
 function renderTabs(state) {
   currentState = state;
@@ -41,6 +52,7 @@ function renderTabs(state) {
     block: "nearest",
     inline: "nearest",
   });
+  updateTabOverflowIndicators();
 
   restoreTabButton.disabled = state.closedTabs.length === 0;
 }
@@ -96,9 +108,13 @@ tabList.addEventListener(
 
     event.preventDefault();
     tabList.scrollLeft += event.deltaY;
+    updateTabOverflowIndicators();
   },
   { passive: false },
 );
+
+tabList.addEventListener("scroll", updateTabOverflowIndicators);
+window.addEventListener("resize", updateTabOverflowIndicators);
 
 document.addEventListener("keydown", (event) => {
   if (event.altKey || !(event.ctrlKey || event.metaKey)) {

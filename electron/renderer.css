@@ -47,6 +47,38 @@ body {
   min-width: 0;
 }
 
+.tab-cluster {
+  position: relative;
+}
+
+.tab-cluster::before,
+.tab-cluster::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  z-index: 1;
+  width: 22px;
+  height: 31px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.tab-cluster::before {
+  left: 0;
+  background: linear-gradient(to right, var(--page) 18%, transparent);
+}
+
+.tab-cluster::after {
+  right: 33px;
+  background: linear-gradient(to left, var(--page) 18%, transparent);
+}
+
+.tab-cluster[data-overflow-left="true"]::before,
+.tab-cluster[data-overflow-right="true"]::after {
+  opacity: 1;
+}
+
 .tab-list {
   display: flex;
   flex: 1 1 auto;
@@ -56,7 +88,11 @@ body {
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+
+.tab-list::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
@@ -133,6 +169,12 @@ body {
 .toolbar-button:hover {
   background: var(--active-soft);
   color: var(--ink);
+}
+
+.tab-actions .toolbar-button {
+  height: 31px;
+  margin-bottom: -1px;
+  border-bottom: 0;
 }
 
 .toolbar-button:disabled {
