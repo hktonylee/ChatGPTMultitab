@@ -149,6 +149,12 @@ function createElectronTabController({
       return;
     }
 
+    if (key === "t" && input?.shift) {
+      event.preventDefault();
+      controller.restoreClosedTab();
+      return;
+    }
+
     if (key === "t") {
       event.preventDefault();
       controller.createTab();

@@ -863,6 +863,67 @@ test("electron tab controller handles webContents shortcuts before window defaul
   assert.equal(controller.getState().tabs.length, 3);
 });
 
+test("electron tab controller reopens the last closed tab with Command+Shift+T", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const beforeInputHandlers = [];
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on(eventName, handler) {
+          if (eventName === "before-input-event") {
+            beforeInputHandlers.push(handler);
+          }
+        },
+        close() {},
+        reload() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  controller.createTab("https://chatgpt.com/c/second");
+  const closedTab = controller.createTab("https://chatgpt.com/c/third");
+
+  controller.closeTab(closedTab.id);
+
+  let reopenPrevented = false;
+  beforeInputHandlers[1](
+    {
+      preventDefault() {
+        reopenPrevented = true;
+      },
+    },
+    {
+      alt: false,
+      control: false,
+      meta: true,
+      shift: true,
+      key: "T",
+    },
+  );
+
+  const state = controller.getState();
+
+  assert.equal(reopenPrevented, true);
+  assert.equal(state.closedTabs.length, 0);
+  assert.equal(state.tabs.length, 3);
+  assert.equal(state.activeTabId, closedTab.id);
+  assert.deepEqual(state.tabs.at(-1), {
+    id: closedTab.id,
+    title: "ChatGPT",
+    url: "https://chatgpt.com/c/third",
+  });
+});
+
 test("electron tab controller switches tabs with Windows Ctrl+Tab shortcuts", () => {
   const { createElectronTabController } = require("../src/electron-tabs");
 
