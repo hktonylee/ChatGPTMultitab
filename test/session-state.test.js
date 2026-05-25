@@ -111,6 +111,14 @@ test("normalizes relative or non-chatgpt urls back to the default chat url", () 
   );
 });
 
+test("normalizes www and scheme-less ChatGPT urls to the canonical host", () => {
+  assert.equal(createTabState(4, "Chat", "www.chatGPT.com").url, "https://chatgpt.com/");
+  assert.equal(
+    createTabState(5, "Chat", "https://www.chatGPT.com/c/abc?model=gpt-4o").url,
+    "https://chatgpt.com/c/abc?model=gpt-4o",
+  );
+});
+
 test("falls back to a default session when stored state is unusable", () => {
   assert.deepEqual(
     sanitizeStoredTabState({

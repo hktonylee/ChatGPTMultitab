@@ -10,6 +10,7 @@ const {
   shell,
 } = require("electron");
 const { createElectronTabController } = require("../src/electron-tabs");
+const { isChatGptUrl, normalizeTabUrl } = require("../src/session-state");
 
 const TOP_BAR_HEIGHT = 42;
 const SESSION_FILE_NAME = "chatgpt-multitab-session.json";
@@ -19,7 +20,8 @@ const NEW_TAB_SHORTCUTS = Object.freeze(["Super+C"]);
 
 let mainWindow = null;
 let tabController = null;
-let pendingNewTabRequest = process.argv.includes(NEW_TAB_ARG);
+let pendingNewTabUrl = getChatGptUrlArg(process.argv);
+let pendingNewTabRequest = process.argv.includes(NEW_TAB_ARG) || Boolean(pendingNewTabUrl);
 
 function getSessionFilePath() {
   return path.join(app.getPath("userData"), SESSION_FILE_NAME);
@@ -66,6 +68,16 @@ function shouldOpenNewTab(argv = []) {
   return argv.includes(NEW_TAB_ARG);
 }
 
+function getChatGptUrlArg(argv = []) {
+  for (const arg of argv) {
+    if (isChatGptUrl(arg)) {
+      return normalizeTabUrl(arg);
+    }
+  }
+
+  return null;
+}
+
 function focusMainWindow() {
   if (!mainWindow || mainWindow.isDestroyed()) {
     return false;
@@ -80,18 +92,25 @@ function focusMainWindow() {
   return true;
 }
 
-function openNewTabInMainWindow() {
+function openNewTabInMainWindow(url) {
   if (!tabController) {
     pendingNewTabRequest = true;
+    pendingNewTabUrl = url || pendingNewTabUrl;
     focusMainWindow();
     return null;
   }
 
   focusMainWindow();
-  return tabController.createTabForNewTabRequest();
+  return tabController.createTabForNewTabRequest(url);
 }
 
 function handleOpenRequest(argv) {
+  const url = getChatGptUrlArg(argv);
+
+  if (url) {
+    return openNewTabInMainWindow(url);
+  }
+
   if (!shouldOpenNewTab(argv)) {
     focusMainWindow();
     return null;
@@ -170,7 +189,9 @@ function createMainWindow() {
   mainWindow.webContents.once("did-finish-load", () => {
     if (pendingNewTabRequest) {
       pendingNewTabRequest = false;
-      openNewTabInMainWindow();
+      const url = pendingNewTabUrl;
+      pendingNewTabUrl = null;
+      openNewTabInMainWindow(url);
       return;
     }
 

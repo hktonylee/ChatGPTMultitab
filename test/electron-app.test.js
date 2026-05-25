@@ -61,7 +61,7 @@ test("electron main process registers Win+C to focus the app and open or reuse a
   assert.match(mainSource, /NEW_TAB_SHORTCUTS\.forEach\(\(shortcut\) => \{/);
   assert.match(mainSource, /const registered = globalShortcut\.register\(shortcut, \(\) => \{/);
   assert.match(mainSource, /openNewTabInMainWindow\(\)/);
-  assert.match(mainSource, /tabController\.createTabForNewTabRequest\(\)/);
+  assert.match(mainSource, /tabController\.createTabForNewTabRequest\(url\)/);
   assert.match(mainSource, /console\.warn\(`Failed to register global shortcut \$\{shortcut\}`\)/);
   assert.match(mainSource, /app\.on\("will-quit", \(\) => \{/);
   assert.match(mainSource, /NEW_TAB_SHORTCUTS\.forEach\(\(shortcut\) => globalShortcut\.unregister\(shortcut\)\)/);
@@ -75,8 +75,21 @@ test("electron main process opens a new tab from a second-instance command argum
   assert.match(mainSource, /app\.on\("second-instance", \(_event, argv\) => \{/);
   assert.match(mainSource, /handleOpenRequest\(argv\)/);
   assert.match(mainSource, /argv\.includes\(NEW_TAB_ARG\)/);
-  assert.match(mainSource, /tabController\.createTabForNewTabRequest\(\)/);
+  assert.match(mainSource, /tabController\.createTabForNewTabRequest\(url\)/);
   assert.match(mainSource, /focusMainWindow\(\)/);
+});
+
+test("electron main process opens ChatGPT url arguments in app tabs", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+
+  assert.match(mainSource, /const \{[^}]*normalizeTabUrl[^}]*\} = require\("\.\.\/src\/session-state"\);/s);
+  assert.match(mainSource, /function getChatGptUrlArg\(argv = \[\]\) \{/);
+  assert.match(mainSource, /normalizeTabUrl\(arg\)/);
+  assert.match(mainSource, /function openNewTabInMainWindow\(url\)/);
+  assert.match(mainSource, /tabController\.createTabForNewTabRequest\(url\)/);
+  assert.match(mainSource, /const url = getChatGptUrlArg\(argv\);/);
+  assert.match(mainSource, /if \(url\) \{/);
+  assert.match(mainSource, /return openNewTabInMainWindow\(url\);/);
 });
 
 test("repo no longer ships the AutoHotkey launcher path", () => {
@@ -697,6 +710,36 @@ test("electron tab controller reuses the visible main ChatGPT tab for Win+C new-
   assert.equal(controller.getState().tabs.length, 2);
   assert.equal(controller.getState().activeTabId, createdTab.id);
   assert.deepEqual(loadedUrls, [DEFAULT_CHAT_URL, DEFAULT_CHAT_URL]);
+});
+
+test("electron tab controller opens ChatGPT url requests with the canonical host", () => {
+  const { createElectronTabController, DEFAULT_CHAT_URL } = require("../src/electron-tabs");
+
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+  const loadedUrls = [];
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL(url) {
+          loadedUrls.push(url);
+        },
+        on() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const openedTab = controller.createTabForNewTabRequest("www.chatGPT.com/c/abc?model=gpt-4o");
+
+  assert.equal(openedTab.url, "https://chatgpt.com/c/abc?model=gpt-4o");
+  assert.deepEqual(loadedUrls, [DEFAULT_CHAT_URL, "https://chatgpt.com/c/abc?model=gpt-4o"]);
+  assert.equal(controller.getState().activeTabId, openedTab.id);
 });
 
 test("electron tab controller replaces the last closed tab with a new default tab", () => {

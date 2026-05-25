@@ -1,5 +1,10 @@
-const { DEFAULT_CHAT_URL, DEFAULT_CHAT_TITLE, createTabState, sanitizeStoredTabState } =
-  require("./session-state");
+const {
+  DEFAULT_CHAT_URL,
+  DEFAULT_CHAT_TITLE,
+  createTabState,
+  normalizeTabUrl,
+  sanitizeStoredTabState,
+} = require("./session-state");
 
 const DEFAULT_CONTENT_BOUNDS = Object.freeze({
   x: 0,
@@ -301,15 +306,16 @@ function createElectronTabController({
       return tab;
     },
 
-    createTabForNewTabRequest() {
+    createTabForNewTabRequest(url) {
+      const nextUrl = normalizeTabUrl(url);
       const activeTab = controller.getActiveTab();
 
-      if (isMainChatUrl(activeTab?.url)) {
+      if (isMainChatUrl(nextUrl) && isMainChatUrl(activeTab?.url)) {
         controller.focusActiveTab();
         return activeTab;
       }
 
-      return controller.createTab();
+      return controller.createTab(nextUrl);
     },
 
     activateTab(id) {

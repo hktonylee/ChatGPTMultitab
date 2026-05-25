@@ -2,6 +2,7 @@
   const DEFAULT_CHAT_URL = "https://chatgpt.com/";
   const DEFAULT_CHAT_TITLE = "ChatGPT";
   const CHATGPT_HOSTNAME = "chatgpt.com";
+  const CHATGPT_WWW_HOSTNAME = "www.chatgpt.com";
 
   function createTabState(id, title = DEFAULT_CHAT_TITLE, url = DEFAULT_CHAT_URL, options = {}) {
     const numericId = Number(id);
@@ -29,22 +30,38 @@
 
   function normalizeTabUrl(url) {
     try {
-      const rawUrl = String(url || "").trim();
+      let rawUrl = String(url || "").trim();
+
+      if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(rawUrl)) {
+        rawUrl = `https://${rawUrl}`;
+      }
 
       if (!/^https:\/\//i.test(rawUrl)) {
         return DEFAULT_CHAT_URL;
       }
 
       const normalizedUrl = new URL(rawUrl);
+      const hostname = normalizedUrl.hostname.toLowerCase();
 
-      if (normalizedUrl.protocol !== "https:" || normalizedUrl.hostname !== CHATGPT_HOSTNAME) {
+      if (
+        normalizedUrl.protocol !== "https:" ||
+        (hostname !== CHATGPT_HOSTNAME && hostname !== CHATGPT_WWW_HOSTNAME)
+      ) {
         return DEFAULT_CHAT_URL;
       }
 
+      normalizedUrl.hostname = CHATGPT_HOSTNAME;
       return normalizedUrl.href;
     } catch (_error) {
       return DEFAULT_CHAT_URL;
     }
+  }
+
+  function isChatGptUrl(url) {
+    return (
+      normalizeTabUrl(url) !== DEFAULT_CHAT_URL ||
+      /^(?:https?:\/\/)?(?:www\.)?chatgpt\.com\/?$/i.test(String(url || "").trim())
+    );
   }
 
   function sanitizeStoredTabState(storedState) {
@@ -96,6 +113,7 @@
     DEFAULT_CHAT_TITLE,
     buildInitialTabState,
     createTabState,
+    isChatGptUrl,
     normalizeTabUrl,
     sanitizeStoredTabState,
   };
