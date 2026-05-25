@@ -868,6 +868,7 @@ test("electron tab controller reopens the last closed tab with Command+Shift+T",
   const { createElectronTabController } = require("../src/electron-tabs");
 
   const beforeInputHandlers = [];
+  const titleHandlers = [];
   const contentView = {
     addChildView() {},
     removeChildView() {},
@@ -882,6 +883,10 @@ test("electron tab controller reopens the last closed tab with Command+Shift+T",
           if (eventName === "before-input-event") {
             beforeInputHandlers.push(handler);
           }
+
+          if (eventName === "page-title-updated") {
+            titleHandlers.push(handler);
+          }
         },
         close() {},
         reload() {},
@@ -894,6 +899,7 @@ test("electron tab controller reopens the last closed tab with Command+Shift+T",
   controller.createTab("https://chatgpt.com/c/second");
   const closedTab = controller.createTab("https://chatgpt.com/c/third");
 
+  controller.updateTab(closedTab.id, { title: "Saved conversation" });
   controller.closeTab(closedTab.id);
 
   let reopenPrevented = false;
@@ -920,9 +926,17 @@ test("electron tab controller reopens the last closed tab with Command+Shift+T",
   assert.equal(state.activeTabId, closedTab.id);
   assert.deepEqual(state.tabs.at(-1), {
     id: closedTab.id,
-    title: "ChatGPT",
+    title: "Saved conversation",
     url: "https://chatgpt.com/c/third",
   });
+
+  titleHandlers.at(-1)(undefined, "ChatGPT");
+
+  assert.equal(controller.getState().tabs.at(-1).title, "Saved conversation");
+
+  titleHandlers.at(-1)(undefined, "Restored conversation");
+
+  assert.equal(controller.getState().tabs.at(-1).title, "Restored conversation");
 });
 
 test("electron tab controller switches tabs with Windows Ctrl+Tab shortcuts", () => {

@@ -206,7 +206,7 @@ function createElectronTabController({
 
   function ensureTabLoaded(tab) {
     if (!tab.view) {
-      tab.isWaitingForRestoredTitle = tab.isUnloaded === true;
+      tab.isWaitingForRestoredTitle = tab.isWaitingForRestoredTitle || tab.isUnloaded === true;
       tab.view = createTabView(tab);
       tab.isUnloaded = false;
     }
@@ -222,7 +222,7 @@ function createElectronTabController({
       url: tabState.url || DEFAULT_CHAT_URL,
       view: null,
       isUnloaded: !shouldLoad,
-      isWaitingForRestoredTitle: false,
+      isWaitingForRestoredTitle: options.waitForRestoredTitle === true,
       lastActiveAt: now(),
     };
 
@@ -367,7 +367,7 @@ function createElectronTabController({
         return null;
       }
 
-      const tab = createManagedTab(tabState);
+      const tab = createManagedTab(tabState, { waitForRestoredTitle: true });
       tabs.push(tab);
       updateNextTabId();
       activeTabId = tab.id;
