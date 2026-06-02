@@ -136,6 +136,29 @@ function createElectronTabController({
     return controller.activateTab(tabs[nextIndex].id);
   }
 
+  function getAdjacentTabShortcutDirection(input) {
+    const key = String(input?.key || "").toLowerCase();
+    const code = String(input?.code || "").toLowerCase();
+
+    if (key === "tab" || code === "tab") {
+      return input?.shift ? -1 : 1;
+    }
+
+    if (!input?.shift) {
+      return 0;
+    }
+
+    if (key === "[" || key === "{" || code === "bracketleft") {
+      return -1;
+    }
+
+    if (key === "]" || key === "}" || code === "bracketright") {
+      return 1;
+    }
+
+    return 0;
+  }
+
   function handleTabShortcut(tab, event, input) {
     if (input?.type && input.type !== "keyDown") {
       return;
@@ -146,11 +169,11 @@ function createElectronTabController({
     }
 
     const key = String(input?.key || "").toLowerCase();
-    const code = String(input?.code || "").toLowerCase();
+    const adjacentDirection = getAdjacentTabShortcutDirection(input);
 
-    if (key === "tab" || code === "tab") {
+    if (adjacentDirection) {
       event.preventDefault();
-      activateAdjacentTab(input?.shift ? -1 : 1);
+      activateAdjacentTab(adjacentDirection);
       return;
     }
 

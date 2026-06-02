@@ -188,6 +188,8 @@ test("renderer leaves new and close shortcuts to the managed chat webContents", 
   assert.doesNotMatch(rendererSource, /String\(event\.key\)\.toLowerCase\(\) === "w"/);
   assert.doesNotMatch(rendererSource, /window\.chatgptTabs\.closeTab\(currentState\.activeTabId\)/);
   assert.match(rendererSource, /event\.key === "Tab"/);
+  assert.match(rendererSource, /event\.code === "BracketLeft"/);
+  assert.match(rendererSource, /event\.code === "BracketRight"/);
 });
 
 test("electron main process does not handle tab shortcuts a second time", () => {
@@ -982,7 +984,7 @@ test("electron tab controller reopens the last closed tab with Command+Shift+T",
   assert.equal(controller.getState().tabs.at(-1).title, "Restored conversation");
 });
 
-test("electron tab controller switches tabs with Windows Ctrl+Tab shortcuts", () => {
+test("electron tab controller switches tabs with keyboard shortcuts", () => {
   const { createElectronTabController } = require("../src/electron-tabs");
 
   const beforeInputHandlers = [];
@@ -1050,6 +1052,46 @@ test("electron tab controller switches tabs with Windows Ctrl+Tab shortcuts", ()
   );
 
   assert.equal(previousPrevented, true);
+  assert.equal(controller.getState().activeTabId, 3);
+
+  let commandBracketPreviousPrevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        commandBracketPreviousPrevented = true;
+      },
+    },
+    {
+      alt: false,
+      control: false,
+      meta: true,
+      shift: true,
+      key: "{",
+      code: "BracketLeft",
+    },
+  );
+
+  assert.equal(commandBracketPreviousPrevented, true);
+  assert.equal(controller.getState().activeTabId, 2);
+
+  let commandBracketNextPrevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        commandBracketNextPrevented = true;
+      },
+    },
+    {
+      alt: false,
+      control: false,
+      meta: true,
+      shift: true,
+      key: "}",
+      code: "BracketRight",
+    },
+  );
+
+  assert.equal(commandBracketNextPrevented, true);
   assert.equal(controller.getState().activeTabId, 3);
 });
 

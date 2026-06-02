@@ -1,5 +1,6 @@
 {
   "name": "chatgpt-multitab",
+  "productName": "ChatGPT Multitab",
   "version": "0.1.0",
   "private": true,
   "main": "electron/main.js",
@@ -7,7 +8,8 @@
     "start": "electron .",
     "test": "node --test test/*.test.js",
     "check": "node --check src/session-state.js && node --check src/electron-tabs.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js",
-    "dist:win": "electron-builder --win nsis portable"
+    "dist:win": "electron-builder --win nsis portable",
+    "dist:mac": "electron-builder --mac dmg zip"
   },
   "devDependencies": {
     "electron": "^42.0.0",
@@ -27,6 +29,13 @@
         "nsis",
         "portable"
       ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity"
     },
     "nsis": {
       "oneClick": false,

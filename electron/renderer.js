@@ -63,6 +63,26 @@ function getTabIdFromEvent(event) {
   return Number(event.target.closest(".tab")?.dataset.tabId || 0);
 }
 
+function getAdjacentTabShortcutDirection(event) {
+  if (event.key === "Tab") {
+    return event.shiftKey ? -1 : 1;
+  }
+
+  if (!event.shiftKey) {
+    return 0;
+  }
+
+  if (event.key === "[" || event.key === "{" || event.code === "BracketLeft") {
+    return -1;
+  }
+
+  if (event.key === "]" || event.key === "}" || event.code === "BracketRight") {
+    return 1;
+  }
+
+  return 0;
+}
+
 tabList.addEventListener("click", (event) => {
   const tabId = getTabIdFromEvent(event);
 
@@ -133,11 +153,12 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (event.key === "Tab") {
+  const direction = getAdjacentTabShortcutDirection(event);
+
+  if (direction) {
     event.preventDefault();
     const tabs = currentState.tabs;
     const activeIndex = tabs.findIndex((tab) => tab.id === currentState.activeTabId);
-    const direction = event.shiftKey ? -1 : 1;
     const nextTab = tabs[(activeIndex + direction + tabs.length) % tabs.length];
 
     if (nextTab) {
