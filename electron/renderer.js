@@ -7,6 +7,9 @@ const TAB_LIST_WHEEL_SCROLL_MULTIPLIER = 3;
 
 let newTabMenuTimer = 0;
 let didOpenNewTabMenu = false;
+if (window.chatgptTabs.platform === "darwin") {
+  document.body.classList.add("platform-macos");
+}
 
 let currentState = {
   activeTabId: 1,

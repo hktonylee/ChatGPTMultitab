@@ -40,6 +40,9 @@ test("electron main window hides the native menu bar", () => {
   const mainSource = readRepoFile("electron", "main.js");
 
   assert.match(mainSource, /autoHideMenuBar:\s*true/);
+  assert.match(mainSource, /const IS_MACOS = process\.platform === "darwin";/);
+  assert.match(mainSource, /titleBarStyle:\s*"hiddenInset"/);
+  assert.match(mainSource, /trafficLightPosition:\s*\{\s*x:\s*12,\s*y:\s*14\s*\}/);
   assert.match(mainSource, /mainWindow\.setMenuBarVisibility\(false\)/);
   assert.match(mainSource, /mainWindow\.setMenu\(null\)/);
 });
@@ -405,6 +408,10 @@ test("renderer keeps readable tab widths in a horizontally scrollable tab strip"
   const rendererSource = readRepoFile("electron", "renderer.js");
   const rendererStyles = readRepoFile("electron", "renderer.css");
 
+  assert.match(rendererSource, /window\.chatgptTabs\.platform === "darwin"/);
+  assert.match(rendererStyles, /body\.platform-macos \.tab-strip\s*\{[^}]*padding-left:\s*80px/s);
+  assert.match(rendererStyles, /body\.platform-macos \.tab-strip\s*\{[^}]*-webkit-app-region:\s*drag/s);
+  assert.match(rendererStyles, /body\.platform-macos \.tab-list,[^{]+\.toolbar-button\s*\{[^}]*-webkit-app-region:\s*no-drag/s);
   assert.match(rendererStyles, /\.tab-list\s*\{[^}]*overflow-x:\s*auto/s);
   assert.match(rendererStyles, /\.tab-list\s*\{[^}]*scrollbar-width:\s*none/s);
   assert.match(rendererStyles, /\.tab-list::-webkit-scrollbar\s*\{[^}]*display:\s*none/s);
