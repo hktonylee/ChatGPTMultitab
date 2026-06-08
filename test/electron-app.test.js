@@ -171,7 +171,7 @@ test("renderer shell is a multitab UI without iframe-hosted ChatGPT pages", () =
   assert.match(rendererHtml, /class="tab-strip"/);
   assert.match(
     rendererHtml,
-    /<div class="tab-cluster">\s*<div class="tab-list"><\/div>\s*<button class="toolbar-button new-tab"/,
+    /<div class="tab-cluster">\s*<div class="tab-list"><\/div>\s*<\/div>\s*<div class="tab-actions">\s*<button class="toolbar-button new-tab"/,
   );
   assert.match(rendererHtml, /<div class="tab-actions">/);
   assert.match(rendererSource, /function renderTabs/);
@@ -318,7 +318,7 @@ test("renderer keeps readable tab widths in a horizontally scrollable tab strip"
   assert.match(rendererStyles, /\.tab\s*\{[^}]*max-width:\s*150px/s);
   assert.match(rendererStyles, /\.tab-cluster::before,\s*\.tab-cluster::after/s);
   assert.match(rendererStyles, /\.tab-cluster::after\s*\{[^}]*width:\s*56px/s);
-  assert.match(rendererStyles, /\.tab-cluster::after\s*\{[^}]*right:\s*30px/s);
+  assert.match(rendererStyles, /\.tab-cluster::after\s*\{[^}]*right:\s*0/s);
   assert.match(rendererStyles, /\.tab-cluster::after\s*\{[^}]*var\(--page\) 0 14px/s);
   assert.match(rendererStyles, /\.tab-cluster\[data-overflow-left="true"\]::before/s);
   assert.match(rendererStyles, /\.tab-cluster\[data-overflow-right="true"\]::after/s);
