@@ -106,6 +106,10 @@ function closeSelectedTab() {
   }
 }
 
+function isCursorAfterSearchText() {
+  return input.selectionStart === input.value.length && input.selectionEnd === input.value.length;
+}
+
 input.addEventListener("input", () => renderResults({ resetSelection: true }));
 
 document.addEventListener("keydown", (event) => {
@@ -123,6 +127,12 @@ document.addEventListener("keydown", (event) => {
 
 input.addEventListener("keydown", (event) => {
   if (event.ctrlKey && event.key === "Delete") {
+    event.preventDefault();
+    closeSelectedTab();
+    return;
+  }
+
+  if (event.key === "Delete" && isCursorAfterSearchText() && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey) {
     event.preventDefault();
     closeSelectedTab();
     return;
