@@ -9,7 +9,7 @@ Right-clicking any tab opens a native Electron context menu for that specific ta
 Display actions in this order:
 
 1. `Reload the page`
-2. `Close the tab`
+2. `Close this tab`
 3. `Close all tabs on the left`
 4. `Close all tabs`
 5. `Open the tab in external browser`
@@ -26,7 +26,7 @@ Disable `Close all tabs on the left` when the right-clicked tab has no tabs to i
 - Cancelling leaves all tabs unchanged.
 - Dialog text identifies the requested action and number of tabs that will close.
 
-`Close the tab` does not require confirmation.
+`Close this tab` does not require confirmation.
 
 Closing every tab keeps existing controller behavior: create one new default tab.
 
