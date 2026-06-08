@@ -142,6 +142,14 @@ function createElectronTabController({
     const key = String(input?.key || "").toLowerCase();
     const code = String(input?.code || "").toLowerCase();
 
+    if (input?.control && (key === "pageup" || code === "pageup")) {
+      return -1;
+    }
+
+    if (input?.control && (key === "pagedown" || code === "pagedown")) {
+      return 1;
+    }
+
     if (key === "tab" || code === "tab") {
       return input?.shift ? -1 : 1;
     }

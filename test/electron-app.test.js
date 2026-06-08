@@ -247,6 +247,8 @@ test("renderer leaves new and close shortcuts to the managed chat webContents", 
   assert.match(rendererSource, /event\.key === "Tab"/);
   assert.match(rendererSource, /event\.code === "BracketLeft"/);
   assert.match(rendererSource, /event\.code === "BracketRight"/);
+  assert.match(rendererSource, /event\.key === "PageUp"/);
+  assert.match(rendererSource, /event\.key === "PageDown"/);
 });
 
 test("new tab button opens a restore menu on long press", () => {
@@ -1273,6 +1275,46 @@ test("electron tab controller switches tabs with keyboard shortcuts", () => {
   );
 
   assert.equal(commandBracketNextPrevented, true);
+  assert.equal(controller.getState().activeTabId, 3);
+
+  let pageDownPrevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        pageDownPrevented = true;
+      },
+    },
+    {
+      alt: false,
+      control: true,
+      meta: false,
+      shift: false,
+      key: "PageDown",
+      code: "PageDown",
+    },
+  );
+
+  assert.equal(pageDownPrevented, true);
+  assert.equal(controller.getState().activeTabId, 1);
+
+  let pageUpPrevented = false;
+  beforeInputHandlers[0](
+    {
+      preventDefault() {
+        pageUpPrevented = true;
+      },
+    },
+    {
+      alt: false,
+      control: true,
+      meta: false,
+      shift: false,
+      key: "PageUp",
+      code: "PageUp",
+    },
+  );
+
+  assert.equal(pageUpPrevented, true);
   assert.equal(controller.getState().activeTabId, 3);
 });
 

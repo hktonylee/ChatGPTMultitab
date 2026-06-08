@@ -65,6 +65,14 @@ function getTabIdFromEvent(event) {
 }
 
 function getAdjacentTabShortcutDirection(event) {
+  if (event.ctrlKey && event.key === "PageUp") {
+    return -1;
+  }
+
+  if (event.ctrlKey && event.key === "PageDown") {
+    return 1;
+  }
+
   if (event.key === "Tab") {
     return event.shiftKey ? -1 : 1;
   }
@@ -82,6 +90,16 @@ function getAdjacentTabShortcutDirection(event) {
   }
 
   return 0;
+}
+
+function activateAdjacentTab(direction) {
+  const tabs = currentState.tabs;
+  const activeIndex = tabs.findIndex((tab) => tab.id === currentState.activeTabId);
+  const nextTab = tabs[(activeIndex + direction + tabs.length) % tabs.length];
+
+  if (nextTab) {
+    window.chatgptTabs.activateTab(nextTab.id);
+  }
 }
 
 tabList.addEventListener("click", (event) => {
@@ -170,13 +188,7 @@ document.addEventListener("keydown", (event) => {
 
   if (direction) {
     event.preventDefault();
-    const tabs = currentState.tabs;
-    const activeIndex = tabs.findIndex((tab) => tab.id === currentState.activeTabId);
-    const nextTab = tabs[(activeIndex + direction + tabs.length) % tabs.length];
-
-    if (nextTab) {
-      window.chatgptTabs.activateTab(nextTab.id);
-    }
+    activateAdjacentTab(direction);
   }
 });
 
