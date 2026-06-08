@@ -18,15 +18,32 @@ function getMatchingTabs() {
   });
 }
 
+function getActiveTabIndex(tabs) {
+  const activeIndex = tabs.findIndex((tab) => tab.id === currentState.activeTabId);
+
+  return Math.max(0, activeIndex);
+}
+
 function activateTab(tabId) {
   window.chatgptTabs.activateTab(tabId).then(() => window.chatgptTabs.closeSearch());
+}
+
+async function closeSelectedTab() {
+  const tab = getMatchingTabs()[selectedIndex];
+
+  if (!tab) {
+    return;
+  }
+
+  await window.chatgptTabs.closeTab(tab.id);
+  input.focus();
 }
 
 function renderResults({ resetSelection = false } = {}) {
   const tabs = getMatchingTabs();
 
   if (resetSelection) {
-    selectedIndex = 0;
+    selectedIndex = getActiveTabIndex(tabs);
   } else {
     selectedIndex = Math.min(selectedIndex, Math.max(0, tabs.length - 1));
   }
@@ -45,7 +62,6 @@ function renderResults({ resetSelection = false } = {}) {
     const title = tab.title || "ChatGPT";
     const row = document.createElement("div");
     row.className = "tab-search-row";
-    row.dataset.active = String(tab.id === currentState.activeTabId);
     row.setAttribute("role", "option");
     row.setAttribute("aria-selected", String(index === selectedIndex));
 
@@ -102,6 +118,12 @@ document.addEventListener("keydown", (event) => {
 });
 
 input.addEventListener("keydown", (event) => {
+  if (event.ctrlKey && event.key === "Delete") {
+    event.preventDefault();
+    closeSelectedTab();
+    return;
+  }
+
   if (event.key === "ArrowDown") {
     event.preventDefault();
     moveSelection(1);

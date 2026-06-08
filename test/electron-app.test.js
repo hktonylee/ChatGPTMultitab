@@ -211,14 +211,18 @@ test("electron app provides a topmost tab search palette", () => {
   assert.match(searchSource, /event\.key === "ArrowDown"/);
   assert.match(searchSource, /event\.key === "ArrowUp"/);
   assert.match(searchSource, /event\.key === "Enter"/);
+  assert.match(searchSource, /event\.ctrlKey && event\.key === "Delete"/);
   assert.match(searchSource, /event\.key === "Escape"/);
   assert.match(searchSource, /event\.ctrlKey && event\.code === "Backquote"/);
+  assert.match(searchSource, /function getActiveTabIndex\(tabs\)/);
+  assert.match(searchSource, /selectedIndex = getActiveTabIndex\(tabs\)/);
   assert.match(searchSource, /window\.chatgptTabs\.activateTab/);
   assert.match(searchSource, /window\.chatgptTabs\.closeTab/);
   assert.match(searchSource, /window\.chatgptTabs\.closeSearch/);
   assert.match(searchStyles, /\.tab-search-panel/);
   assert.match(searchStyles, /\.tab-search-row:hover \.tab-search-close/);
   assert.match(searchStyles, /\.tab-search-row:focus-within \.tab-search-close/);
+  assert.doesNotMatch(searchStyles, /\.tab-search-row\[data-active="true"\]\s+\.tab-search-select\s*\{\s*font-weight:/);
 });
 
 test("renderer leaves new and close shortcuts to the managed chat webContents", () => {

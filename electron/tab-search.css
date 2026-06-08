@@ -131,10 +131,6 @@ kbd {
   white-space: nowrap;
 }
 
-.tab-search-row[data-active="true"] .tab-search-select {
-  font-weight: 700;
-}
-
 .tab-search-close {
   width: 24px;
   height: 24px;
