@@ -215,6 +215,10 @@ test("electron app provides a topmost tab search palette", () => {
   assert.match(searchSource, /event\.ctrlKey && event\.key === "Delete"/);
   assert.match(searchSource, /event\.key === "Escape"/);
   assert.match(searchSource, /event\.ctrlKey && event\.code === "Backquote"/);
+  assert.match(searchSource, /let shouldFocusInputAfterRender = false;/);
+  assert.match(searchSource, /function focusInputAfterRender\(\)/);
+  assert.match(searchSource, /shouldFocusInputAfterRender = true;/);
+  assert.match(searchSource, /if \(shouldFocusInputAfterRender\) \{/);
   assert.match(searchSource, /function getActiveTabIndex\(tabs\)/);
   assert.match(searchSource, /selectedIndex = getActiveTabIndex\(tabs\)/);
   assert.match(searchSource, /window\.chatgptTabs\.activateTab/);

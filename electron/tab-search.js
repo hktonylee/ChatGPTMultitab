@@ -8,6 +8,7 @@ let currentState = {
   tabs: [],
 };
 let selectedIndex = 0;
+let shouldFocusInputAfterRender = false;
 
 function getMatchingTabs() {
   const query = input.value.trim().toLocaleLowerCase();
@@ -28,15 +29,13 @@ function activateTab(tabId) {
   window.chatgptTabs.activateTab(tabId).then(() => window.chatgptTabs.closeSearch());
 }
 
-async function closeSelectedTab() {
-  const tab = getMatchingTabs()[selectedIndex];
+function focusInputAfterRender() {
+  requestAnimationFrame(() => input.focus());
+}
 
-  if (!tab) {
-    return;
-  }
-
-  await window.chatgptTabs.closeTab(tab.id);
-  input.focus();
+async function closeTabFromSearch(tabId) {
+  shouldFocusInputAfterRender = true;
+  await window.chatgptTabs.closeTab(tabId);
 }
 
 function renderResults({ resetSelection = false } = {}) {
@@ -77,10 +76,7 @@ function renderResults({ resetSelection = false } = {}) {
     closeButton.type = "button";
     closeButton.textContent = "×";
     closeButton.setAttribute("aria-label", `Close ${title}`);
-    closeButton.addEventListener("click", async () => {
-      await window.chatgptTabs.closeTab(tab.id);
-      input.focus();
-    });
+    closeButton.addEventListener("click", () => closeTabFromSearch(tab.id));
 
     row.append(selectButton, closeButton);
     results.append(row);
@@ -100,6 +96,14 @@ function moveSelection(direction) {
 
   selectedIndex = (selectedIndex + direction + tabs.length) % tabs.length;
   renderResults();
+}
+
+function closeSelectedTab() {
+  const tab = getMatchingTabs()[selectedIndex];
+
+  if (tab) {
+    closeTabFromSearch(tab.id);
+  }
 }
 
 input.addEventListener("input", () => renderResults({ resetSelection: true }));
@@ -156,6 +160,11 @@ backdrop.addEventListener("click", (event) => {
 window.chatgptTabs.onStateChange((state) => {
   currentState = state;
   renderResults();
+
+  if (shouldFocusInputAfterRender) {
+    shouldFocusInputAfterRender = false;
+    focusInputAfterRender();
+  }
 });
 
 window.chatgptTabs.onSearchOpened((state) => {
