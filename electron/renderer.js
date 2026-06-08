@@ -148,6 +148,16 @@ tabList.addEventListener("dblclick", (event) => {
   }
 });
 
+tabList.addEventListener("contextmenu", (event) => {
+  const tabId = getTabIdFromEvent(event);
+
+  if (tabId) {
+    event.preventDefault();
+    event.stopPropagation();
+    window.chatgptTabs.showTabContextMenu(tabId);
+  }
+});
+
 tabList.addEventListener(
   "wheel",
   (event) => {

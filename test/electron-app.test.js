@@ -334,6 +334,41 @@ test("renderer prevents Windows autoscroll before middle-click closing a tab", (
   assert.match(rendererSource, /window\.chatgptTabs\.closeTab\(tabId\);/);
 });
 
+test("renderer asks the main process to show a tab context menu on right click", () => {
+  const preloadSource = readRepoFile("electron", "preload.js");
+  const rendererSource = readRepoFile("electron", "renderer.js");
+
+  assert.match(preloadSource, /showTabContextMenu: \(id\) => ipcRenderer\.send\("tabs:showContextMenu", id\)/);
+  assert.match(rendererSource, /tabList\.addEventListener\("contextmenu", \(event\) => \{/);
+  assert.match(rendererSource, /window\.chatgptTabs\.showTabContextMenu\(tabId\);/);
+});
+
+test("electron main process shows grouped target-tab context menu actions", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+
+  assert.match(mainSource, /ipcMain\.on\("tabs:showContextMenu"/);
+  assert.match(
+    mainSource,
+    /label:\s*"Reload the page"[\s\S]*label:\s*"Open the tab in external browser"[\s\S]*type:\s*"separator"[\s\S]*label:\s*"Close this tab"[\s\S]*label:\s*"Close all tabs on the left"[\s\S]*label:\s*"Close all tabs"/,
+  );
+  assert.match(mainSource, /controller\.reloadTab\(tabId\)/);
+  assert.match(mainSource, /shell\.openExternal\(tab\.url\)/);
+  assert.match(mainSource, /enabled:\s*tabIndex > 0/);
+});
+
+test("electron main process confirms batch tab context menu closes", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+
+  assert.match(mainSource, /dialog/);
+  assert.match(mainSource, /function confirmCloseTabs\(/);
+  assert.match(mainSource, /dialog\s*\.showMessageBox\(/);
+  assert.match(mainSource, /controller\.closeTabsToLeft\(tabId\)/);
+  assert.match(mainSource, /controller\.closeAllTabs\(\)/);
+  assert.match(mainSource, /buttons:\s*\["Cancel", confirmLabel\]/);
+  assert.match(mainSource, /cancelId:\s*0/);
+  assert.match(mainSource, /if \(response === 1\)/);
+});
+
 test("renderer marks unloaded tabs with a distinct tab strip state", () => {
   const rendererSource = readRepoFile("electron", "renderer.js");
   const rendererStyles = readRepoFile("electron", "renderer.css");
@@ -881,6 +916,111 @@ test("electron tab controller replaces the last closed tab with a new default ta
   assert.equal(loadedUrls.at(-1), DEFAULT_CHAT_URL);
   assert.equal(attachedViews.length, 1);
   assert.equal(attachedViews[0], controller.getActiveTab().view);
+});
+
+test("electron tab controller reloads a target tab without activating it", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const reloadedUrls = [];
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    let loadedUrl = "";
+
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL(url) {
+          loadedUrl = url;
+        },
+        on() {},
+        close() {},
+        reload() {
+          reloadedUrls.push(loadedUrl);
+        },
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const firstTab = controller.getActiveTab();
+  const secondTab = controller.createTab("https://chatgpt.com/c/second");
+
+  const reloadedTab = controller.reloadTab(firstTab.id);
+
+  assert.equal(reloadedTab.id, firstTab.id);
+  assert.deepEqual(reloadedUrls, [firstTab.url]);
+  assert.equal(controller.getState().activeTabId, secondTab.id);
+  assert.equal(controller.reloadTab(999), null);
+});
+
+test("electron tab controller closes tabs to the left of a target tab", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on() {},
+        close() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const firstTab = controller.getActiveTab();
+  const secondTab = controller.createTab("https://chatgpt.com/c/second");
+  const thirdTab = controller.createTab("https://chatgpt.com/c/third");
+
+  const closedTabs = controller.closeTabsToLeft(thirdTab.id);
+
+  assert.deepEqual(closedTabs.map((tab) => tab.id), [firstTab.id, secondTab.id]);
+  assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [thirdTab.id]);
+  assert.equal(controller.closeTabsToLeft(thirdTab.id).length, 0);
+});
+
+test("electron tab controller closes all current tabs and keeps a fresh default tab", () => {
+  const { createElectronTabController, DEFAULT_CHAT_URL } = require("../src/electron-tabs");
+
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on() {},
+        close() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const firstTab = controller.getActiveTab();
+  const secondTab = controller.createTab("https://chatgpt.com/c/second");
+
+  const closedTabs = controller.closeAllTabs();
+  const state = controller.getState();
+
+  assert.deepEqual(closedTabs.map((tab) => tab.id), [firstTab.id, secondTab.id]);
+  assert.equal(state.tabs.length, 1);
+  assert.equal(state.tabs[0].url, DEFAULT_CHAT_URL);
+  assert.equal(state.activeTabId, state.tabs[0].id);
 });
 
 test("electron tab controller handles webContents shortcuts before window defaults", () => {

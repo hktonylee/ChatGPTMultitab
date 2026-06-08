@@ -411,6 +411,32 @@ function createElectronTabController({
       return tab;
     },
 
+    reloadTab(id) {
+      const tab = tabs.find((item) => item.id === Number(id));
+
+      if (!tab) {
+        return null;
+      }
+
+      ensureTabLoaded(tab).webContents.reload?.();
+      emitStateChange();
+      return tab;
+    },
+
+    closeTabsToLeft(id) {
+      const index = tabs.findIndex((tab) => tab.id === Number(id));
+
+      if (index <= 0) {
+        return [];
+      }
+
+      return tabs.slice(0, index).map((tab) => controller.closeTab(tab.id));
+    },
+
+    closeAllTabs() {
+      return tabs.slice().map((tab) => controller.closeTab(tab.id));
+    },
+
     restoreClosedTab() {
       const tabState = closedTabs.pop();
 

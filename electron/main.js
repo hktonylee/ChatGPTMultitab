@@ -3,6 +3,7 @@ const path = require("node:path");
 const {
   app,
   BrowserWindow,
+  dialog,
   globalShortcut,
   Menu,
   WebContentsView,
@@ -238,6 +239,81 @@ function showNewTabMenu() {
   return true;
 }
 
+function confirmCloseTabs(window, { title, detail, confirmLabel, onConfirm }) {
+  dialog
+    .showMessageBox(window, {
+      type: "warning",
+      title,
+      message: title,
+      detail,
+      buttons: ["Cancel", confirmLabel],
+      defaultId: 0,
+      cancelId: 0,
+    })
+    .then(({ response }) => {
+      if (response === 1) {
+        onConfirm();
+      }
+    });
+}
+
+function showTabContextMenu(event, id) {
+  const controller = getController();
+  const tabId = Number(id);
+  const state = controller.getState();
+  const tabIndex = state.tabs.findIndex((item) => item.id === tabId);
+  const tab = state.tabs[tabIndex];
+
+  if (!tab) {
+    return false;
+  }
+
+  const window = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+  const leftTabCount = tabIndex;
+  const allTabCount = state.tabs.length;
+  const menu = Menu.buildFromTemplate([
+    {
+      label: "Reload the page",
+      click: () => controller.reloadTab(tabId),
+    },
+    {
+      label: "Open the tab in external browser",
+      click: () => shell.openExternal(tab.url),
+    },
+    {
+      type: "separator",
+    },
+    {
+      label: "Close this tab",
+      click: () => controller.closeTab(tabId),
+    },
+    {
+      label: "Close all tabs on the left",
+      enabled: tabIndex > 0,
+      click: () =>
+        confirmCloseTabs(window, {
+          title: "Close all tabs on the left?",
+          detail: `${leftTabCount} tab${leftTabCount === 1 ? "" : "s"} will close.`,
+          confirmLabel: "Close tabs",
+          onConfirm: () => controller.closeTabsToLeft(tabId),
+        }),
+    },
+    {
+      label: "Close all tabs",
+      click: () =>
+        confirmCloseTabs(window, {
+          title: "Close all tabs?",
+          detail: `${allTabCount} tab${allTabCount === 1 ? "" : "s"} will close.`,
+          confirmLabel: "Close tabs",
+          onConfirm: () => controller.closeAllTabs(),
+        }),
+    },
+  ]);
+
+  menu.popup({ window });
+  return true;
+}
+
 function createChatView() {
   const view = new WebContentsView({
     webPreferences: {
@@ -360,6 +436,7 @@ ipcMain.handle("tabs:openExternal", () => {
     shell.openExternal(activeTab.url);
   }
 });
+ipcMain.on("tabs:showContextMenu", showTabContextMenu);
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
