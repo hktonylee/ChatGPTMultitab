@@ -9,10 +9,11 @@ Right-clicking any tab opens a native Electron context menu for that specific ta
 Display actions in this order:
 
 1. `Reload the page`
-2. `Close this tab`
-3. `Close all tabs on the left`
-4. `Close all tabs`
-5. `Open the tab in external browser`
+2. `Open the tab in external browser`
+3. Separator
+4. `Close this tab`
+5. `Close all tabs on the left`
+6. `Close all tabs`
 
 `Reload the page` and `Open the tab in external browser` operate on the right-clicked tab, even when it is not active.
 
