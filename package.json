@@ -7,7 +7,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.js",
-    "check": "node --check src/session-state.js && node --check src/electron-tabs.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js",
+    "check": "node --check src/session-state.js && node --check src/electron-tabs.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js && node --check electron/tab-search.js",
     "dist:win": "electron-builder --win nsis portable",
     "dist:mac": "electron-builder --mac dmg zip"
   },

@@ -153,6 +153,12 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (event.ctrlKey && event.code === "Backquote") {
+    event.preventDefault();
+    window.chatgptTabs.toggleSearch();
+    return;
+  }
+
   const direction = getAdjacentTabShortcutDirection(event);
 
   if (direction) {

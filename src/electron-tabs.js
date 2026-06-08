@@ -60,6 +60,7 @@ function createElectronTabController({
   now = () => Date.now(),
   setIntervalFn = setInterval,
   onStateChange = () => {},
+  onToggleTabSearch = () => {},
 } = {}) {
   if (!contentView || typeof contentView.addChildView !== "function") {
     throw new TypeError("contentView with addChildView is required");
@@ -169,7 +170,14 @@ function createElectronTabController({
     }
 
     const key = String(input?.key || "").toLowerCase();
+    const code = String(input?.code || "").toLowerCase();
     const adjacentDirection = getAdjacentTabShortcutDirection(input);
+
+    if (input?.control && (key === "`" || code === "backquote")) {
+      event.preventDefault();
+      onToggleTabSearch();
+      return;
+    }
 
     if (adjacentDirection) {
       event.preventDefault();

@@ -2,11 +2,11 @@
 
 ## Goal
 
-Add a VS Code-style tab search palette opened by `Ctrl+``. It appears at top-center, lists every open tab title, focuses search input immediately, and filters results as user types.
+Add a VS Code-style tab search palette opened by `Ctrl+Backquote`. It appears at top-center, lists every open tab title, focuses search input immediately, and filters results as user types.
 
 ## Interaction
 
-- `Ctrl+`` toggles palette from either active ChatGPT content or shell UI.
+- `Ctrl+Backquote` toggles palette from either active ChatGPT content or shell UI.
 - Search uses case-insensitive title substring matching.
 - First matching row is selected by default.
 - `ArrowUp` and `ArrowDown` move selection.
@@ -20,11 +20,11 @@ Add a VS Code-style tab search palette opened by `Ctrl+``. It appears at top-cen
 
 `src/electron-tabs.js` remains shortcut owner for active ChatGPT `WebContentsView` instances. On `Ctrl+``, controller prevents default and calls new `onToggleTabSearch` callback.
 
-`electron/main.js` supplies callback and sends `tabs:toggleSearch` to shell renderer. Shell renderer also handles shortcut when shell itself has focus.
+`electron/main.js` supplies callback and manages a transparent, topmost search `WebContentsView`. A dedicated view is required because ChatGPT content views render above the BrowserWindow shell DOM. Shell renderer also handles shortcut when shell itself has focus.
 
-`electron/preload.js` exposes toggle event subscription. Existing state-change and tab mutation APIs supply titles, activation, and close behavior.
+`electron/preload.js` exposes search toggle/close actions and opened-event subscription. Existing state-change and tab mutation APIs supply titles, activation, and close behavior.
 
-`electron/renderer.html`, `electron/renderer.css`, and `electron/renderer.js` own overlay markup, styling, filtering, keyboard navigation, activation, and close-row behavior.
+`electron/tab-search.html`, `electron/tab-search.css`, and `electron/tab-search.js` own overlay markup, styling, filtering, keyboard navigation, activation, and close-row behavior.
 
 ## Visual Direction
 

@@ -20,6 +20,8 @@ const NEW_TAB_SHORTCUTS = Object.freeze(["Super+C"]);
 
 let mainWindow = null;
 let tabController = null;
+let tabSearchView = null;
+let isTabSearchOpen = false;
 let pendingNewTabUrl = getChatGptUrlArg(process.argv);
 let pendingNewTabRequest = process.argv.includes(NEW_TAB_ARG) || Boolean(pendingNewTabUrl);
 
@@ -55,13 +57,83 @@ function getChatBounds(window) {
   };
 }
 
+function getTabSearchBounds(window) {
+  const [width, height] = window.getContentSize();
+
+  return {
+    x: 0,
+    y: TOP_BAR_HEIGHT,
+    width,
+    height: Math.max(1, height - TOP_BAR_HEIGHT),
+  };
+}
+
 function sendTabState(state) {
   if (!mainWindow || mainWindow.isDestroyed()) {
     return;
   }
 
   mainWindow.webContents.send("tabs:state", state);
+  tabSearchView?.webContents.send("tabs:state", state);
   writeSessionState(state);
+}
+
+function closeTabSearch() {
+  if (!isTabSearchOpen) {
+    return false;
+  }
+
+  isTabSearchOpen = false;
+  tabSearchView?.setVisible(false);
+  tabController?.focusActiveTab();
+  return true;
+}
+
+function focusTabSearchView() {
+  if (!isTabSearchOpen || !tabSearchView) {
+    return;
+  }
+
+  tabSearchView.webContents.focus();
+}
+
+function openTabSearchView() {
+  if (!isTabSearchOpen || !tabSearchView) {
+    return;
+  }
+
+  tabSearchView.webContents.send("tabs:searchOpened", getController().getState());
+  focusTabSearchView();
+}
+
+function toggleTabSearch() {
+  if (!mainWindow || mainWindow.isDestroyed() || !tabSearchView) {
+    return false;
+  }
+
+  if (isTabSearchOpen) {
+    return closeTabSearch();
+  }
+
+  isTabSearchOpen = true;
+  tabSearchView.setBounds(getTabSearchBounds(mainWindow));
+  mainWindow.contentView.addChildView(tabSearchView);
+  tabSearchView.setVisible(true);
+
+  if (tabSearchView.webContents.isLoading()) {
+    tabSearchView.webContents.once("did-finish-load", openTabSearchView);
+  } else {
+    openTabSearchView();
+  }
+
+  return true;
+}
+
+function keepTabSearchOnTop() {
+  if (isTabSearchOpen && mainWindow && tabSearchView) {
+    mainWindow.contentView.addChildView(tabSearchView);
+    tabSearchView.webContents.focus();
+  }
 }
 
 function shouldOpenNewTab(argv = []) {
@@ -148,6 +220,21 @@ function createChatView() {
   return view;
 }
 
+function createTabSearchView() {
+  const view = new WebContentsView({
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(__dirname, "preload.js"),
+    },
+  });
+
+  view.setBackgroundColor("#00000000");
+  view.setVisible(false);
+  view.webContents.loadFile(path.join(__dirname, "tab-search.html"));
+  return view;
+}
+
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -171,18 +258,28 @@ function createMainWindow() {
     initialBounds: getChatBounds(mainWindow),
     initialState: readSessionState(),
     onStateChange: sendTabState,
+    onToggleTabSearch: toggleTabSearch,
   });
+  tabSearchView = createTabSearchView();
+  tabSearchView.setBounds(getTabSearchBounds(mainWindow));
+  mainWindow.contentView.addChildView(tabSearchView);
 
   mainWindow.on("resize", () => {
     tabController.setBounds(getChatBounds(mainWindow));
+    tabSearchView.setBounds(getTabSearchBounds(mainWindow));
   });
 
   mainWindow.on("maximize", () => {
     tabController.setBounds(getChatBounds(mainWindow));
+    tabSearchView.setBounds(getTabSearchBounds(mainWindow));
   });
 
   mainWindow.on("focus", () => {
-    tabController.focusActiveTab();
+    if (isTabSearchOpen) {
+      focusTabSearchView();
+    } else {
+      tabController.focusActiveTab();
+    }
   });
 
   mainWindow.loadFile(path.join(__dirname, "renderer.html"));
@@ -210,8 +307,14 @@ function getController() {
 ipcMain.handle("tabs:getState", () => getController().getState());
 ipcMain.handle("tabs:create", (_event, url) => getController().createTab(url).id);
 ipcMain.handle("tabs:activate", (_event, id) => getController().activateTab(id)?.id || null);
-ipcMain.handle("tabs:close", (_event, id) => getController().closeTab(id)?.id || null);
+ipcMain.handle("tabs:close", (_event, id) => {
+  const closedTabId = getController().closeTab(id)?.id || null;
+  keepTabSearchOnTop();
+  return closedTabId;
+});
 ipcMain.handle("tabs:restoreClosed", () => getController().restoreClosedTab()?.id || null);
+ipcMain.handle("tabs:toggleSearch", toggleTabSearch);
+ipcMain.handle("tabs:closeSearch", closeTabSearch);
 ipcMain.handle("tabs:openExternal", () => {
   const activeTab = getController().getActiveTab();
 

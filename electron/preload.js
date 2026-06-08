@@ -7,9 +7,16 @@ contextBridge.exposeInMainWorld("chatgptTabs", {
   closeTab: (id) => ipcRenderer.invoke("tabs:close", id),
   restoreClosedTab: () => ipcRenderer.invoke("tabs:restoreClosed"),
   openExternal: () => ipcRenderer.invoke("tabs:openExternal"),
+  toggleSearch: () => ipcRenderer.invoke("tabs:toggleSearch"),
+  closeSearch: () => ipcRenderer.invoke("tabs:closeSearch"),
   onStateChange: (callback) => {
     const listener = (_event, state) => callback(state);
     ipcRenderer.on("tabs:state", listener);
     return () => ipcRenderer.removeListener("tabs:state", listener);
+  },
+  onSearchOpened: (callback) => {
+    const listener = (_event, state) => callback(state);
+    ipcRenderer.on("tabs:searchOpened", listener);
+    return () => ipcRenderer.removeListener("tabs:searchOpened", listener);
   },
 });

@@ -131,7 +131,7 @@ test("repo no longer ships Chrome extension or Worker build code", () => {
   assert.equal(fs.existsSync(path.join(repoRoot, "worker")), false);
   assert.equal(
     packageJson.scripts.check,
-    "node --check src/session-state.js && node --check src/electron-tabs.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js",
+    "node --check src/session-state.js && node --check src/electron-tabs.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js && node --check electron/tab-search.js",
   );
 });
 
@@ -179,6 +179,46 @@ test("renderer shell is a multitab UI without iframe-hosted ChatGPT pages", () =
   assert.match(rendererSource, /chatgptTabs\.activateTab/);
   assert.doesNotMatch(rendererHtml, /<iframe/i);
   assert.doesNotMatch(rendererSource, /createElement\(['"]iframe['"]\)/);
+});
+
+test("electron app provides a topmost tab search palette", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+  const preloadSource = readRepoFile("electron", "preload.js");
+  const rendererSource = readRepoFile("electron", "renderer.js");
+  const searchHtml = readRepoFile("electron", "tab-search.html");
+  const searchSource = readRepoFile("electron", "tab-search.js");
+  const searchStyles = readRepoFile("electron", "tab-search.css");
+
+  assert.match(mainSource, /let tabSearchView = null;/);
+  assert.match(mainSource, /function toggleTabSearch\(\)/);
+  assert.match(mainSource, /mainWindow\.contentView\.addChildView\(tabSearchView\)/);
+  assert.match(mainSource, /view\.setBackgroundColor\("#00000000"\)/);
+  assert.match(mainSource, /tabSearchView\.webContents\.send\("tabs:searchOpened"/);
+  assert.match(mainSource, /onToggleTabSearch: toggleTabSearch/);
+  assert.match(mainSource, /ipcMain\.handle\("tabs:toggleSearch"/);
+  assert.match(mainSource, /ipcMain\.handle\("tabs:closeSearch"/);
+  assert.match(preloadSource, /toggleSearch: \(\) => ipcRenderer\.invoke\("tabs:toggleSearch"\)/);
+  assert.match(preloadSource, /closeSearch: \(\) => ipcRenderer\.invoke\("tabs:closeSearch"\)/);
+  assert.match(preloadSource, /onSearchOpened:/);
+  assert.match(rendererSource, /event\.ctrlKey/);
+  assert.match(rendererSource, /event\.code === "Backquote"/);
+  assert.match(rendererSource, /window\.chatgptTabs\.toggleSearch\(\)/);
+  assert.match(searchHtml, /role="dialog"/);
+  assert.match(searchHtml, /class="tab-search-input"/);
+  assert.match(searchHtml, /class="tab-search-results"/);
+  assert.match(searchSource, /function getMatchingTabs/);
+  assert.match(searchSource, /title\.toLocaleLowerCase\(\)\.includes\(query\)/);
+  assert.match(searchSource, /event\.key === "ArrowDown"/);
+  assert.match(searchSource, /event\.key === "ArrowUp"/);
+  assert.match(searchSource, /event\.key === "Enter"/);
+  assert.match(searchSource, /event\.key === "Escape"/);
+  assert.match(searchSource, /event\.ctrlKey && event\.code === "Backquote"/);
+  assert.match(searchSource, /window\.chatgptTabs\.activateTab/);
+  assert.match(searchSource, /window\.chatgptTabs\.closeTab/);
+  assert.match(searchSource, /window\.chatgptTabs\.closeSearch/);
+  assert.match(searchStyles, /\.tab-search-panel/);
+  assert.match(searchStyles, /\.tab-search-row:hover \.tab-search-close/);
+  assert.match(searchStyles, /\.tab-search-row:focus-within \.tab-search-close/);
 });
 
 test("renderer leaves new and close shortcuts to the managed chat webContents", () => {
@@ -907,6 +947,79 @@ test("electron tab controller handles webContents shortcuts before window defaul
   assert.equal(reloadPrevented, true);
   assert.equal(reloadCount, 1);
   assert.equal(controller.getState().tabs.length, 3);
+});
+
+test("electron tab controller opens tab search with Ctrl+Backquote", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const beforeInputHandlers = [];
+  let toggleCount = 0;
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on(eventName, handler) {
+          if (eventName === "before-input-event") {
+            beforeInputHandlers.push(handler);
+          }
+        },
+        close() {},
+        focus() {},
+      },
+    };
+  }
+
+  createElectronTabController({
+    contentView,
+    createView,
+    onToggleTabSearch() {
+      toggleCount += 1;
+    },
+  });
+
+  let prevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        prevented = true;
+      },
+    },
+    {
+      type: "keyDown",
+      alt: false,
+      control: true,
+      meta: false,
+      key: "`",
+      code: "Backquote",
+    },
+  );
+
+  assert.equal(prevented, true);
+  assert.equal(toggleCount, 1);
+
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        throw new Error("key-up must not be prevented");
+      },
+    },
+    {
+      type: "keyUp",
+      alt: false,
+      control: true,
+      meta: false,
+      key: "`",
+      code: "Backquote",
+    },
+  );
+
+  assert.equal(toggleCount, 1);
 });
 
 test("electron tab controller reopens the last closed tab with Command+Shift+T", () => {

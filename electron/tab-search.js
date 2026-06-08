@@ -1,0 +1,149 @@
+const backdrop = document.querySelector(".tab-search-backdrop");
+const input = document.querySelector(".tab-search-input");
+const results = document.querySelector(".tab-search-results");
+
+let currentState = {
+  activeTabId: 1,
+  closedTabs: [],
+  tabs: [],
+};
+let selectedIndex = 0;
+
+function getMatchingTabs() {
+  const query = input.value.trim().toLocaleLowerCase();
+
+  return currentState.tabs.filter((tab) => {
+    const title = tab.title || "ChatGPT";
+    return title.toLocaleLowerCase().includes(query);
+  });
+}
+
+function activateTab(tabId) {
+  window.chatgptTabs.activateTab(tabId).then(() => window.chatgptTabs.closeSearch());
+}
+
+function renderResults({ resetSelection = false } = {}) {
+  const tabs = getMatchingTabs();
+
+  if (resetSelection) {
+    selectedIndex = 0;
+  } else {
+    selectedIndex = Math.min(selectedIndex, Math.max(0, tabs.length - 1));
+  }
+
+  results.replaceChildren();
+
+  if (tabs.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "tab-search-empty";
+    empty.textContent = "No matching tabs";
+    results.append(empty);
+    return;
+  }
+
+  tabs.forEach((tab, index) => {
+    const title = tab.title || "ChatGPT";
+    const row = document.createElement("div");
+    row.className = "tab-search-row";
+    row.dataset.active = String(tab.id === currentState.activeTabId);
+    row.setAttribute("role", "option");
+    row.setAttribute("aria-selected", String(index === selectedIndex));
+
+    const selectButton = document.createElement("button");
+    selectButton.className = "tab-search-select";
+    selectButton.type = "button";
+    selectButton.textContent = title;
+    selectButton.title = title;
+    selectButton.addEventListener("click", () => activateTab(tab.id));
+
+    const closeButton = document.createElement("button");
+    closeButton.className = "tab-search-close";
+    closeButton.type = "button";
+    closeButton.textContent = "×";
+    closeButton.setAttribute("aria-label", `Close ${title}`);
+    closeButton.addEventListener("click", async () => {
+      await window.chatgptTabs.closeTab(tab.id);
+      input.focus();
+    });
+
+    row.append(selectButton, closeButton);
+    results.append(row);
+  });
+
+  results.querySelector('[aria-selected="true"]')?.scrollIntoView({
+    block: "nearest",
+  });
+}
+
+function moveSelection(direction) {
+  const tabs = getMatchingTabs();
+
+  if (tabs.length === 0) {
+    return;
+  }
+
+  selectedIndex = (selectedIndex + direction + tabs.length) % tabs.length;
+  renderResults();
+}
+
+input.addEventListener("input", () => renderResults({ resetSelection: true }));
+
+document.addEventListener("keydown", (event) => {
+  if (event.ctrlKey && event.code === "Backquote") {
+    event.preventDefault();
+    window.chatgptTabs.closeSearch();
+    return;
+  }
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    window.chatgptTabs.closeSearch();
+  }
+});
+
+input.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    moveSelection(1);
+    return;
+  }
+
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    moveSelection(-1);
+    return;
+  }
+
+  if (event.key === "Enter") {
+    event.preventDefault();
+    const tab = getMatchingTabs()[selectedIndex];
+
+    if (tab) {
+      activateTab(tab.id);
+    }
+    return;
+  }
+});
+
+backdrop.addEventListener("click", (event) => {
+  if (event.target === backdrop) {
+    window.chatgptTabs.closeSearch();
+  }
+});
+
+window.chatgptTabs.onStateChange((state) => {
+  currentState = state;
+  renderResults();
+});
+
+window.chatgptTabs.onSearchOpened((state) => {
+  currentState = state;
+  input.value = "";
+  renderResults({ resetSelection: true });
+  requestAnimationFrame(() => input.focus());
+});
+
+window.chatgptTabs.getState().then((state) => {
+  currentState = state;
+  renderResults({ resetSelection: true });
+});

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Search tabs</title>
+    <link rel="stylesheet" href="tab-search.css">
+  </head>
+  <body>
+    <div class="tab-search-backdrop">
+      <section class="tab-search-panel" role="dialog" aria-modal="true" aria-label="Search open tabs">
+        <label class="tab-search-field">
+          <span class="tab-search-icon" aria-hidden="true">⌕</span>
+          <input
+            class="tab-search-input"
+            type="search"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Search open tabs"
+            aria-label="Search open tabs"
+            aria-controls="tab-search-results"
+          >
+          <kbd>Esc</kbd>
+        </label>
+        <div class="tab-search-results" id="tab-search-results" role="listbox" aria-label="Open tabs"></div>
+      </section>
+    </div>
+    <script src="tab-search.js"></script>
+  </body>
+</html>
