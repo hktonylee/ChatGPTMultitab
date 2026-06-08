@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld("chatgptTabs", {
   closeTab: (id) => ipcRenderer.invoke("tabs:close", id),
   restoreClosedTab: () => ipcRenderer.invoke("tabs:restoreClosed"),
   openExternal: () => ipcRenderer.invoke("tabs:openExternal"),
+  showNewTabMenu: () => ipcRenderer.invoke("tabs:showNewTabMenu"),
   toggleSearch: () => ipcRenderer.invoke("tabs:toggleSearch"),
   closeSearch: () => ipcRenderer.invoke("tabs:closeSearch"),
   onStateChange: (callback) => {

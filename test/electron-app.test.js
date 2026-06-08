@@ -174,6 +174,7 @@ test("renderer shell is a multitab UI without iframe-hosted ChatGPT pages", () =
     /<div class="tab-cluster">\s*<div class="tab-list"><\/div>\s*<\/div>\s*<div class="tab-actions">\s*<button class="toolbar-button new-tab"/,
   );
   assert.match(rendererHtml, /<div class="tab-actions">/);
+  assert.doesNotMatch(rendererHtml, /class="toolbar-button restore-tab"/);
   assert.match(rendererSource, /function renderTabs/);
   assert.match(rendererSource, /chatgptTabs\.createTab/);
   assert.match(rendererSource, /chatgptTabs\.activateTab/);
@@ -234,6 +235,29 @@ test("renderer leaves new and close shortcuts to the managed chat webContents", 
   assert.match(rendererSource, /event\.key === "Tab"/);
   assert.match(rendererSource, /event\.code === "BracketLeft"/);
   assert.match(rendererSource, /event\.code === "BracketRight"/);
+});
+
+test("new tab button opens a restore menu on long press", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+  const preloadSource = readRepoFile("electron", "preload.js");
+  const rendererSource = readRepoFile("electron", "renderer.js");
+
+  assert.match(mainSource, /Menu/);
+  assert.match(mainSource, /function showNewTabMenu\(\)/);
+  assert.match(mainSource, /Menu\.buildFromTemplate\(\[/);
+  assert.match(mainSource, /label:\s*"Open a new tab"/);
+  assert.match(mainSource, /label:\s*"Re-open the closed tab"/);
+  assert.match(mainSource, /enabled:\s*getController\(\)\.getState\(\)\.closedTabs\.length > 0/);
+  assert.match(mainSource, /ipcMain\.handle\("tabs:showNewTabMenu"/);
+  assert.match(preloadSource, /showNewTabMenu: \(\) => ipcRenderer\.invoke\("tabs:showNewTabMenu"\)/);
+  assert.match(rendererSource, /const NEW_TAB_MENU_HOLD_MS = 500;/);
+  assert.match(rendererSource, /newTabButton\.addEventListener\("pointerdown"/);
+  assert.match(rendererSource, /window\.setTimeout\(\(\) => \{/);
+  assert.match(rendererSource, /window\.chatgptTabs\.showNewTabMenu\(\)/);
+  assert.match(rendererSource, /newTabButton\.addEventListener\("click"/);
+  assert.match(rendererSource, /window\.chatgptTabs\.createTab\(\)/);
+  assert.doesNotMatch(rendererSource, /document\.querySelector\("\.restore-tab"\)/);
+  assert.doesNotMatch(rendererSource, /restoreTabButton/);
 });
 
 test("electron main process does not handle tab shortcuts a second time", () => {

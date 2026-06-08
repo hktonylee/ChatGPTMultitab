@@ -1,10 +1,13 @@
 const tabCluster = document.querySelector(".tab-cluster");
 const tabList = document.querySelector(".tab-list");
 const newTabButton = document.querySelector(".new-tab");
-const restoreTabButton = document.querySelector(".restore-tab");
 const openExternalButton = document.querySelector(".open-external");
 
+const NEW_TAB_MENU_HOLD_MS = 500;
 const TAB_LIST_WHEEL_SCROLL_MULTIPLIER = 3;
+
+let newTabMenuTimer = 0;
+let didOpenNewTabMenu = false;
 
 let currentState = {
   activeTabId: 1,
@@ -55,8 +58,6 @@ function renderTabs(state) {
     inline: "nearest",
   });
   updateTabOverflowIndicators();
-
-  restoreTabButton.disabled = state.closedTabs.length === 0;
 }
 
 function getTabIdFromEvent(event) {
@@ -173,12 +174,41 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-newTabButton.addEventListener("click", () => {
-  window.chatgptTabs.createTab();
+function clearNewTabMenuTimer() {
+  if (!newTabMenuTimer) {
+    return;
+  }
+
+  window.clearTimeout(newTabMenuTimer);
+  newTabMenuTimer = 0;
+}
+
+newTabButton.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0) {
+    return;
+  }
+
+  didOpenNewTabMenu = false;
+  clearNewTabMenuTimer();
+  newTabMenuTimer = window.setTimeout(() => {
+    newTabMenuTimer = 0;
+    didOpenNewTabMenu = true;
+    window.chatgptTabs.showNewTabMenu();
+  }, NEW_TAB_MENU_HOLD_MS);
 });
 
-restoreTabButton.addEventListener("click", () => {
-  window.chatgptTabs.restoreClosedTab();
+newTabButton.addEventListener("pointerup", clearNewTabMenuTimer);
+newTabButton.addEventListener("pointercancel", clearNewTabMenuTimer);
+newTabButton.addEventListener("pointerleave", clearNewTabMenuTimer);
+
+newTabButton.addEventListener("click", (event) => {
+  if (didOpenNewTabMenu) {
+    event.preventDefault();
+    didOpenNewTabMenu = false;
+    return;
+  }
+
+  window.chatgptTabs.createTab();
 });
 
 openExternalButton.addEventListener("click", () => {

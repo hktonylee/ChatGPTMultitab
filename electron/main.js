@@ -4,6 +4,7 @@ const {
   app,
   BrowserWindow,
   globalShortcut,
+  Menu,
   WebContentsView,
   ipcMain,
   session,
@@ -203,6 +204,27 @@ function registerNewTabShortcuts() {
   });
 }
 
+function showNewTabMenu() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return false;
+  }
+
+  const menu = Menu.buildFromTemplate([
+    {
+      label: "Open a new tab",
+      click: () => getController().createTab(),
+    },
+    {
+      label: "Re-open the closed tab",
+      enabled: getController().getState().closedTabs.length > 0,
+      click: () => getController().restoreClosedTab(),
+    },
+  ]);
+
+  menu.popup({ window: mainWindow });
+  return true;
+}
+
 function createChatView() {
   const view = new WebContentsView({
     webPreferences: {
@@ -313,6 +335,7 @@ ipcMain.handle("tabs:close", (_event, id) => {
   return closedTabId;
 });
 ipcMain.handle("tabs:restoreClosed", () => getController().restoreClosedTab()?.id || null);
+ipcMain.handle("tabs:showNewTabMenu", showNewTabMenu);
 ipcMain.handle("tabs:toggleSearch", toggleTabSearch);
 ipcMain.handle("tabs:closeSearch", closeTabSearch);
 ipcMain.handle("tabs:openExternal", () => {
