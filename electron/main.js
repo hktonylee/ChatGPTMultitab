@@ -116,6 +116,19 @@ function toggleTabSearch() {
     return closeTabSearch();
   }
 
+  return openTabSearch();
+}
+
+function openTabSearch() {
+  if (!mainWindow || mainWindow.isDestroyed() || !tabSearchView) {
+    return false;
+  }
+
+  if (isTabSearchOpen) {
+    focusTabSearchView();
+    return true;
+  }
+
   isTabSearchOpen = true;
   tabSearchView.setBounds(getTabSearchBounds(mainWindow));
   mainWindow.contentView.addChildView(tabSearchView);
@@ -280,6 +293,7 @@ function createMainWindow() {
     initialBounds: getChatBounds(mainWindow),
     initialState: readSessionState(),
     onStateChange: sendTabState,
+    onOpenTabSearch: openTabSearch,
     onToggleTabSearch: toggleTabSearch,
   });
   tabSearchView = createTabSearchView();
@@ -337,6 +351,7 @@ ipcMain.handle("tabs:close", (_event, id) => {
 ipcMain.handle("tabs:restoreClosed", () => getController().restoreClosedTab()?.id || null);
 ipcMain.handle("tabs:showNewTabMenu", showNewTabMenu);
 ipcMain.handle("tabs:toggleSearch", toggleTabSearch);
+ipcMain.handle("tabs:openSearch", openTabSearch);
 ipcMain.handle("tabs:closeSearch", closeTabSearch);
 ipcMain.handle("tabs:openExternal", () => {
   const activeTab = getController().getActiveTab();

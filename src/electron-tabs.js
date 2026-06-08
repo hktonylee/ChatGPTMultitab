@@ -60,6 +60,7 @@ function createElectronTabController({
   now = () => Date.now(),
   setIntervalFn = setInterval,
   onStateChange = () => {},
+  onOpenTabSearch = () => {},
   onToggleTabSearch = () => {},
 } = {}) {
   if (!contentView || typeof contentView.addChildView !== "function") {
@@ -176,6 +177,12 @@ function createElectronTabController({
     if (input?.control && (key === "`" || code === "backquote")) {
       event.preventDefault();
       onToggleTabSearch();
+      return;
+    }
+
+    if (input?.control && input?.shift && (key === "p" || code === "keyp")) {
+      event.preventDefault();
+      onOpenTabSearch();
       return;
     }
 

@@ -154,6 +154,12 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (event.ctrlKey && event.shiftKey && String(event.key || "").toLowerCase() === "p") {
+    event.preventDefault();
+    window.chatgptTabs.openSearch();
+    return;
+  }
+
   if (event.ctrlKey && event.code === "Backquote") {
     event.preventDefault();
     window.chatgptTabs.toggleSearch();

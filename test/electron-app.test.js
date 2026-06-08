@@ -197,12 +197,16 @@ test("electron app provides a topmost tab search palette", () => {
   assert.match(mainSource, /tabSearchView\.webContents\.send\("tabs:searchOpened"/);
   assert.match(mainSource, /onToggleTabSearch: toggleTabSearch/);
   assert.match(mainSource, /ipcMain\.handle\("tabs:toggleSearch"/);
+  assert.match(mainSource, /ipcMain\.handle\("tabs:openSearch"/);
   assert.match(mainSource, /ipcMain\.handle\("tabs:closeSearch"/);
   assert.match(preloadSource, /toggleSearch: \(\) => ipcRenderer\.invoke\("tabs:toggleSearch"\)/);
+  assert.match(preloadSource, /openSearch: \(\) => ipcRenderer\.invoke\("tabs:openSearch"\)/);
   assert.match(preloadSource, /closeSearch: \(\) => ipcRenderer\.invoke\("tabs:closeSearch"\)/);
   assert.match(preloadSource, /onSearchOpened:/);
   assert.match(rendererSource, /event\.ctrlKey/);
   assert.match(rendererSource, /event\.code === "Backquote"/);
+  assert.match(rendererSource, /event\.ctrlKey && event\.shiftKey && String\(event\.key \|\| ""\)\.toLowerCase\(\) === "p"/);
+  assert.match(rendererSource, /window\.chatgptTabs\.openSearch\(\)/);
   assert.match(rendererSource, /window\.chatgptTabs\.toggleSearch\(\)/);
   assert.match(searchHtml, /role="dialog"/);
   assert.match(searchHtml, /class="tab-search-input"/);
@@ -981,11 +985,12 @@ test("electron tab controller handles webContents shortcuts before window defaul
   assert.equal(controller.getState().tabs.length, 3);
 });
 
-test("electron tab controller opens tab search with Ctrl+Backquote", () => {
+test("electron tab controller opens tab search with Ctrl+Backquote and Ctrl+Shift+P", () => {
   const { createElectronTabController } = require("../src/electron-tabs");
 
   const beforeInputHandlers = [];
   let toggleCount = 0;
+  let openCount = 0;
   const contentView = {
     addChildView() {},
     removeChildView() {},
@@ -1013,6 +1018,9 @@ test("electron tab controller opens tab search with Ctrl+Backquote", () => {
     onToggleTabSearch() {
       toggleCount += 1;
     },
+    onOpenTabSearch() {
+      openCount += 1;
+    },
   });
 
   let prevented = false;
@@ -1034,6 +1042,29 @@ test("electron tab controller opens tab search with Ctrl+Backquote", () => {
 
   assert.equal(prevented, true);
   assert.equal(toggleCount, 1);
+  assert.equal(openCount, 0);
+
+  prevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        prevented = true;
+      },
+    },
+    {
+      type: "keyDown",
+      alt: false,
+      control: true,
+      meta: false,
+      shift: true,
+      key: "P",
+      code: "KeyP",
+    },
+  );
+
+  assert.equal(prevented, true);
+  assert.equal(toggleCount, 1);
+  assert.equal(openCount, 1);
 
   beforeInputHandlers.at(-1)(
     {
@@ -1052,6 +1083,7 @@ test("electron tab controller opens tab search with Ctrl+Backquote", () => {
   );
 
   assert.equal(toggleCount, 1);
+  assert.equal(openCount, 1);
 });
 
 test("electron tab controller reopens the last closed tab with Command+Shift+T", () => {
