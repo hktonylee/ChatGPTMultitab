@@ -166,6 +166,8 @@ test("Makefile can sign a Windows executable with the generated certificate", ()
 test("renderer shell is a multitab UI without iframe-hosted ChatGPT pages", () => {
   const rendererHtml = readRepoFile("electron", "renderer.html");
   const rendererSource = readRepoFile("electron", "renderer.js");
+  const preloadSource = readRepoFile("electron", "preload.js");
+  const mainSource = readRepoFile("electron", "main.js");
 
   assert.match(rendererHtml, /role="tablist"/);
   assert.match(rendererHtml, /class="tab-strip"/);
@@ -175,6 +177,11 @@ test("renderer shell is a multitab UI without iframe-hosted ChatGPT pages", () =
   );
   assert.match(rendererHtml, /<div class="tab-actions">/);
   assert.doesNotMatch(rendererHtml, /class="toolbar-button restore-tab"/);
+  assert.doesNotMatch(rendererHtml, /open-external/);
+  assert.doesNotMatch(rendererSource, /openExternalButton/);
+  assert.doesNotMatch(rendererSource, /chatgptTabs\.openExternal/);
+  assert.doesNotMatch(preloadSource, /tabs:openExternal/);
+  assert.doesNotMatch(mainSource, /ipcMain\.handle\("tabs:openExternal"/);
   assert.match(rendererSource, /function renderTabs/);
   assert.match(rendererSource, /chatgptTabs\.createTab/);
   assert.match(rendererSource, /chatgptTabs\.activateTab/);

@@ -1,7 +1,6 @@
 const tabCluster = document.querySelector(".tab-cluster");
 const tabList = document.querySelector(".tab-list");
 const newTabButton = document.querySelector(".new-tab");
-const openExternalButton = document.querySelector(".open-external");
 
 const NEW_TAB_MENU_HOLD_MS = 500;
 const TAB_LIST_WHEEL_SCROLL_MULTIPLIER = 3;
@@ -237,10 +236,6 @@ newTabButton.addEventListener("click", (event) => {
   }
 
   window.chatgptTabs.createTab();
-});
-
-openExternalButton.addEventListener("click", () => {
-  window.chatgptTabs.openExternal();
 });
 
 window.chatgptTabs.onStateChange(renderTabs);

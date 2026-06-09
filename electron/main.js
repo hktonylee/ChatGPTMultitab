@@ -429,13 +429,6 @@ ipcMain.handle("tabs:showNewTabMenu", showNewTabMenu);
 ipcMain.handle("tabs:toggleSearch", toggleTabSearch);
 ipcMain.handle("tabs:openSearch", openTabSearch);
 ipcMain.handle("tabs:closeSearch", closeTabSearch);
-ipcMain.handle("tabs:openExternal", () => {
-  const activeTab = getController().getActiveTab();
-
-  if (activeTab?.url) {
-    shell.openExternal(activeTab.url);
-  }
-});
 ipcMain.on("tabs:showContextMenu", showTabContextMenu);
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
