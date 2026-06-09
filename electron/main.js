@@ -269,8 +269,8 @@ function showTabContextMenu(event, id) {
   }
 
   const window = BrowserWindow.fromWebContents(event.sender) || mainWindow;
-  const leftTabCount = tabIndex;
-  const allTabCount = state.tabs.length;
+  const leftTabCount = state.tabs.slice(0, tabIndex).filter((item) => !item.isStarred).length;
+  const allTabCount = state.tabs.filter((item) => !item.isStarred).length;
   const menu = Menu.buildFromTemplate([
     {
       label: "Reload the page",
@@ -281,15 +281,19 @@ function showTabContextMenu(event, id) {
       click: () => shell.openExternal(tab.url),
     },
     {
+      label: tab.isStarred ? "Unstar this tab" : "Star this tab",
+      click: () => controller.toggleTabStar(tabId),
+    },
+    {
       type: "separator",
     },
     {
       label: "Close this tab",
-      click: () => controller.closeTab(tabId),
+      click: () => controller.closeTab(tabId, { force: true }),
     },
     {
       label: "Close all tabs on the left",
-      enabled: tabIndex > 0,
+      enabled: leftTabCount > 0,
       click: () =>
         confirmCloseTabs(window, {
           title: "Close all tabs on the left?",
@@ -300,6 +304,7 @@ function showTabContextMenu(event, id) {
     },
     {
       label: "Close all tabs",
+      enabled: allTabCount > 0,
       click: () =>
         confirmCloseTabs(window, {
           title: "Close all tabs?",

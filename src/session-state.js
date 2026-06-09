@@ -17,6 +17,10 @@
       tabState.isUnloaded = true;
     }
 
+    if (options.isStarred === true) {
+      tabState.isStarred = true;
+    }
+
     return tabState;
   }
 
@@ -89,6 +93,7 @@
 
         return createTabState(id, tab?.title, tab?.url, {
           isUnloaded: tab?.isUnloaded === true,
+          isStarred: tab?.isStarred === true,
         });
       })
       .filter(Boolean);

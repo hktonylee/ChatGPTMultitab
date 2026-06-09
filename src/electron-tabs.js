@@ -27,6 +27,16 @@ function serializeTab(tab) {
     tabState.isUnloaded = true;
   }
 
+  if (tab.isStarred === true) {
+    tabState.isStarred = true;
+  }
+
+  return tabState;
+}
+
+function serializeClosedTab(tab) {
+  const tabState = serializeTab(tab);
+  delete tabState.isStarred;
   return tabState;
 }
 
@@ -273,6 +283,7 @@ function createElectronTabController({
       url: tabState.url || DEFAULT_CHAT_URL,
       view: null,
       isUnloaded: !shouldLoad,
+      isStarred: tabState.isStarred === true,
       isWaitingForRestoredTitle: options.waitForRestoredTitle === true,
       lastActiveAt: now(),
     };
@@ -377,15 +388,19 @@ function createElectronTabController({
       return tab;
     },
 
-    closeTab(id) {
+    closeTab(id, options = {}) {
       const index = tabs.findIndex((tab) => tab.id === Number(id));
 
       if (index < 0) {
         return null;
       }
 
+      if (tabs[index].isStarred && options.force !== true) {
+        return null;
+      }
+
       const [tab] = tabs.splice(index, 1);
-      closedTabs.push(serializeTab(tab));
+      closedTabs.push(serializeClosedTab(tab));
 
       if (tab.view && attachedView === tab.view) {
         contentView.removeChildView(tab.view);
@@ -411,6 +426,18 @@ function createElectronTabController({
       return tab;
     },
 
+    toggleTabStar(id) {
+      const tab = tabs.find((item) => item.id === Number(id));
+
+      if (!tab) {
+        return null;
+      }
+
+      tab.isStarred = !tab.isStarred;
+      emitStateChange();
+      return tab;
+    },
+
     reloadTab(id) {
       const tab = tabs.find((item) => item.id === Number(id));
 
@@ -430,11 +457,17 @@ function createElectronTabController({
         return [];
       }
 
-      return tabs.slice(0, index).map((tab) => controller.closeTab(tab.id));
+      return tabs
+        .slice(0, index)
+        .map((tab) => controller.closeTab(tab.id))
+        .filter(Boolean);
     },
 
     closeAllTabs() {
-      return tabs.slice().map((tab) => controller.closeTab(tab.id));
+      return tabs
+        .slice()
+        .map((tab) => controller.closeTab(tab.id))
+        .filter(Boolean);
     },
 
     restoreClosedTab() {

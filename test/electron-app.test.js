@@ -360,7 +360,20 @@ test("electron main process shows grouped target-tab context menu actions", () =
   );
   assert.match(mainSource, /controller\.reloadTab\(tabId\)/);
   assert.match(mainSource, /shell\.openExternal\(tab\.url\)/);
-  assert.match(mainSource, /enabled:\s*tabIndex > 0/);
+  assert.match(mainSource, /const leftTabCount = state\.tabs\.slice\(0, tabIndex\)\.filter\(\(item\) => !item\.isStarred\)\.length/);
+  assert.match(mainSource, /const allTabCount = state\.tabs\.filter\(\(item\) => !item\.isStarred\)\.length/);
+  assert.match(mainSource, /enabled:\s*leftTabCount > 0/);
+  assert.match(mainSource, /enabled:\s*allTabCount > 0/);
+});
+
+test("electron app shows and toggles starred tabs from the target-tab context menu", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+  const rendererSource = readRepoFile("electron", "renderer.js");
+
+  assert.match(rendererSource, /tab\.isStarred \? "⭐ " : ""/);
+  assert.match(mainSource, /label:\s*tab\.isStarred \? "Unstar this tab" : "Star this tab"/);
+  assert.match(mainSource, /controller\.toggleTabStar\(tabId\)/);
+  assert.match(mainSource, /controller\.closeTab\(tabId,\s*\{\s*force:\s*true\s*\}\)/);
 });
 
 test("electron main process confirms batch tab context menu closes", () => {
@@ -995,6 +1008,124 @@ test("electron tab controller closes tabs to the left of a target tab", () => {
   assert.deepEqual(closedTabs.map((tab) => tab.id), [firstTab.id, secondTab.id]);
   assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [thirdTab.id]);
   assert.equal(controller.closeTabsToLeft(thirdTab.id).length, 0);
+});
+
+test("electron tab controller persists starred state and protects normal close", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on() {},
+        close() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const starredTab = controller.getActiveTab();
+
+  assert.equal(controller.toggleTabStar(starredTab.id).isStarred, true);
+  assert.equal(controller.getState().tabs[0].isStarred, true);
+  assert.equal(controller.closeTab(starredTab.id), null);
+  assert.equal(controller.getState().tabs[0].id, starredTab.id);
+
+  assert.equal(controller.toggleTabStar(starredTab.id).isStarred, false);
+  assert.equal("isStarred" in controller.getState().tabs[0], false);
+
+  const restoredController = createElectronTabController({
+    contentView,
+    createView,
+    initialState: {
+      activeTabId: 7,
+      tabs: [
+        {
+          id: 7,
+          title: "Persisted star",
+          url: "https://chatgpt.com/c/persisted-star",
+          isStarred: true,
+        },
+      ],
+    },
+  });
+
+  assert.equal(restoredController.getState().tabs[0].isStarred, true);
+  assert.equal(restoredController.closeTab(7), null);
+});
+
+test("electron tab controller skips starred tabs during batch close", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on() {},
+        close() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const firstTab = controller.getActiveTab();
+  const secondTab = controller.createTab("https://chatgpt.com/c/second");
+  const thirdTab = controller.createTab("https://chatgpt.com/c/third");
+
+  controller.toggleTabStar(secondTab.id);
+
+  assert.deepEqual(controller.closeTabsToLeft(thirdTab.id).map((tab) => tab.id), [firstTab.id]);
+  assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [secondTab.id, thirdTab.id]);
+  assert.deepEqual(controller.closeAllTabs().map((tab) => tab.id), [thirdTab.id]);
+  assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [secondTab.id]);
+});
+
+test("electron tab controller force closes a starred tab without restoring its star", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on() {},
+        close() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const starredTab = controller.getActiveTab();
+
+  controller.toggleTabStar(starredTab.id);
+
+  assert.equal(controller.closeTab(starredTab.id, { force: true }).id, starredTab.id);
+  assert.equal("isStarred" in controller.getState().closedTabs[0], false);
+
+  const restoredTab = controller.restoreClosedTab();
+
+  assert.equal(restoredTab.id, starredTab.id);
+  assert.equal("isStarred" in controller.getState().tabs.at(-1), false);
 });
 
 test("electron tab controller closes all current tabs and keeps a fresh default tab", () => {

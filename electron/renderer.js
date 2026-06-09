@@ -40,7 +40,7 @@ function renderTabs(state) {
 
     const title = document.createElement("span");
     title.className = "tab-title";
-    title.textContent = tab.title || "ChatGPT";
+    title.textContent = `${tab.isStarred ? "⭐ " : ""}${tab.title || "ChatGPT"}`;
 
     const closeButton = document.createElement("button");
     closeButton.className = "tab-close";
