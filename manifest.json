@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT Multitab System",
+  "name": "ChatGPT Multitab",
   "description": "Creates a multitab ChatGPT workspace with trusted frame access for configured exact URLs.",
   "version": "0.1.0",
   "permissions": [
@@ -43,6 +43,6 @@
       "48": "extension-icon.png",
       "128": "extension-icon.png"
     },
-    "default_title": "ChatGPT Multitab System"
+    "default_title": "ChatGPT Multitab"
   }
 }

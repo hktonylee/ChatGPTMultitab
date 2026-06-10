@@ -1,4 +1,4 @@
-# ChatGPT Multitab System Extension Design
+# ChatGPT Multitab Extension Design
 
 ## Goal
 
