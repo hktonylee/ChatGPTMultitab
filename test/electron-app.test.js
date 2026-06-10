@@ -1129,6 +1129,41 @@ test("electron tab controller force closes a starred tab without restoring its s
   assert.equal("isStarred" in controller.getState().tabs.at(-1), false);
 });
 
+test("electron tab controller restores closed tabs with unique open tab ids", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on() {},
+        close() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  controller.createTab("https://chatgpt.com/c/second");
+  const closedTab = controller.createTab("https://chatgpt.com/c/third");
+
+  controller.closeTab(closedTab.id);
+  const replacementTab = controller.createTab("https://chatgpt.com/c/replacement");
+  const restoredTab = controller.restoreClosedTab();
+  const openTabIds = controller.getState().tabs.map((tab) => tab.id);
+
+  assert.notEqual(replacementTab.id, closedTab.id);
+  assert.equal(restoredTab.id, closedTab.id);
+  assert.equal(new Set(openTabIds).size, openTabIds.length);
+  assert.equal(controller.getState().activeTabId, restoredTab.id);
+});
+
 test("electron tab controller closes all current tabs and keeps a fresh default tab", () => {
   const { createElectronTabController, DEFAULT_CHAT_URL } = require("../src/electron-tabs");
 
@@ -1248,7 +1283,7 @@ test("electron tab controller handles webContents shortcuts before window defaul
 
   assert.equal(nextNewTabPrevented, true);
   assert.equal(controller.getState().tabs.length, 3);
-  assert.equal(controller.getState().activeTabId, 3);
+  assert.equal(controller.getState().activeTabId, 4);
 
   let reloadPrevented = false;
   beforeInputHandlers.at(-1)(

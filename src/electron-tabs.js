@@ -112,7 +112,9 @@ function createElectronTabController({
   }
 
   function updateNextTabId() {
-    nextTabId = tabs.reduce((maxId, tab) => Math.max(maxId, tab.id), 0) + 1;
+    const maxOpenTabId = tabs.reduce((maxId, tab) => Math.max(maxId, tab.id), 0);
+    const maxClosedTabId = closedTabs.reduce((maxId, tab) => Math.max(maxId, tab.id), 0);
+    nextTabId = Math.max(maxOpenTabId, maxClosedTabId) + 1;
   }
 
   function attachView(tab) {
