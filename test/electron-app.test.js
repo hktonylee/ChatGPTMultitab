@@ -236,6 +236,7 @@ test("electron app provides a topmost tab search palette", () => {
   assert.match(searchSource, /if \(shouldFocusInputAfterRender\) \{/);
   assert.match(searchSource, /function getActiveTabIndex\(tabs\)/);
   assert.match(searchSource, /selectedIndex = getActiveTabIndex\(tabs\)/);
+  assert.match(searchSource, /tab\.isStarred \? "⭐ " : ""/);
   assert.match(searchSource, /window\.chatgptTabs\.activateTab/);
   assert.match(searchSource, /window\.chatgptTabs\.closeTab/);
   assert.match(searchSource, /window\.chatgptTabs\.closeSearch/);

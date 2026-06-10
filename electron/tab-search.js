@@ -25,6 +25,12 @@ function getActiveTabIndex(tabs) {
   return Math.max(0, activeIndex);
 }
 
+function getTabDisplayTitle(tab) {
+  const title = tab.title || "ChatGPT";
+
+  return `${tab.isStarred ? "⭐ " : ""}${title}`;
+}
+
 function activateTab(tabId) {
   window.chatgptTabs.activateTab(tabId).then(() => window.chatgptTabs.closeSearch());
 }
@@ -59,6 +65,7 @@ function renderResults({ resetSelection = false } = {}) {
 
   tabs.forEach((tab, index) => {
     const title = tab.title || "ChatGPT";
+    const displayTitle = getTabDisplayTitle(tab);
     const row = document.createElement("div");
     row.className = "tab-search-row";
     row.setAttribute("role", "option");
@@ -67,15 +74,15 @@ function renderResults({ resetSelection = false } = {}) {
     const selectButton = document.createElement("button");
     selectButton.className = "tab-search-select";
     selectButton.type = "button";
-    selectButton.textContent = title;
-    selectButton.title = title;
+    selectButton.textContent = displayTitle;
+    selectButton.title = displayTitle;
     selectButton.addEventListener("click", () => activateTab(tab.id));
 
     const closeButton = document.createElement("button");
     closeButton.className = "tab-search-close";
     closeButton.type = "button";
     closeButton.textContent = "×";
-    closeButton.setAttribute("aria-label", `Close ${title}`);
+    closeButton.setAttribute("aria-label", `Close ${displayTitle}`);
     closeButton.addEventListener("click", () => closeTabFromSearch(tab.id));
 
     row.append(selectButton, closeButton);
