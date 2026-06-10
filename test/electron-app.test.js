@@ -356,7 +356,7 @@ test("electron main process shows grouped target-tab context menu actions", () =
   assert.match(mainSource, /ipcMain\.on\("tabs:showContextMenu"/);
   assert.match(
     mainSource,
-    /label:\s*"Reload the page"[\s\S]*label:\s*"Open the tab in external browser"[\s\S]*type:\s*"separator"[\s\S]*label:\s*"Close this tab"[\s\S]*label:\s*"Close all tabs on the left"[\s\S]*label:\s*"Close all tabs"/,
+    /label:\s*tab\.isStarred \? "Unstar this tab" : "Star this tab"[\s\S]*type:\s*"separator"[\s\S]*label:\s*"Reload the page"[\s\S]*label:\s*"Open the tab in external browser"[\s\S]*type:\s*"separator"[\s\S]*label:\s*"Close this tab"[\s\S]*label:\s*"Close all tabs on the left"[\s\S]*label:\s*"Close all tabs"/,
   );
   assert.match(mainSource, /controller\.reloadTab\(tabId\)/);
   assert.match(mainSource, /shell\.openExternal\(tab\.url\)/);

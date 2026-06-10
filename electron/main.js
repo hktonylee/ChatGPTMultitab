@@ -273,16 +273,19 @@ function showTabContextMenu(event, id) {
   const allTabCount = state.tabs.filter((item) => !item.isStarred).length;
   const menu = Menu.buildFromTemplate([
     {
+      label: tab.isStarred ? "Unstar this tab" : "Star this tab",
+      click: () => controller.toggleTabStar(tabId),
+    },
+    {
+      type: "separator",
+    },
+    {
       label: "Reload the page",
       click: () => controller.reloadTab(tabId),
     },
     {
       label: "Open the tab in external browser",
       click: () => shell.openExternal(tab.url),
-    },
-    {
-      label: tab.isStarred ? "Unstar this tab" : "Star this tab",
-      click: () => controller.toggleTabStar(tabId),
     },
     {
       type: "separator",
