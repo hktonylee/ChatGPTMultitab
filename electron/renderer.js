@@ -104,6 +104,18 @@ function activateAdjacentTab(direction) {
   }
 }
 
+function isOpenPaletteShortcut(event) {
+  if (!event.shiftKey || String(event.key || "").toLowerCase() !== "p") {
+    return false;
+  }
+
+  if (event.ctrlKey && !event.metaKey) {
+    return true;
+  }
+
+  return window.chatgptTabs.platform === "darwin" && event.metaKey && !event.ctrlKey;
+}
+
 tabList.addEventListener("click", (event) => {
   const tabId = getTabIdFromEvent(event);
 
@@ -195,7 +207,7 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (event.ctrlKey && event.shiftKey && String(event.key || "").toLowerCase() === "p") {
+  if (isOpenPaletteShortcut(event)) {
     event.preventDefault();
     window.chatgptTabs.openSearch();
     return;

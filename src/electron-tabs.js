@@ -181,6 +181,19 @@ function createElectronTabController({
     return 0;
   }
 
+  function isOpenPaletteShortcut(input, key, code) {
+    if (!input?.shift || !(key === "p" || code === "keyp")) {
+      return false;
+    }
+
+    if (input?.control && !input?.meta) {
+      return true;
+    }
+
+    const platform = input?.platform || process.platform;
+    return platform === "darwin" && input?.meta && !input?.control;
+  }
+
   function handleTabShortcut(tab, event, input) {
     if (input?.type && input.type !== "keyDown") {
       return;
@@ -200,7 +213,7 @@ function createElectronTabController({
       return;
     }
 
-    if (input?.control && input?.shift && (key === "p" || code === "keyp")) {
+    if (isOpenPaletteShortcut(input, key, code)) {
       event.preventDefault();
       onOpenTabSearch();
       return;

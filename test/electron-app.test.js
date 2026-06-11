@@ -215,7 +215,11 @@ test("electron app provides a topmost tab search palette", () => {
   assert.match(preloadSource, /onSearchOpened:/);
   assert.match(rendererSource, /event\.ctrlKey/);
   assert.match(rendererSource, /event\.code === "Backquote"/);
-  assert.match(rendererSource, /event\.ctrlKey && event\.shiftKey && String\(event\.key \|\| ""\)\.toLowerCase\(\) === "p"/);
+  assert.match(rendererSource, /function isOpenPaletteShortcut\(event\)/);
+  assert.match(rendererSource, /window\.chatgptTabs\.platform === "darwin"/);
+  assert.match(rendererSource, /event\.ctrlKey && !event\.metaKey/);
+  assert.match(rendererSource, /event\.metaKey && !event\.ctrlKey/);
+  assert.match(rendererSource, /isOpenPaletteShortcut\(event\)/);
   assert.match(rendererSource, /window\.chatgptTabs\.openSearch\(\)/);
   assert.match(rendererSource, /window\.chatgptTabs\.toggleSearch\(\)/);
   assert.match(searchHtml, /role="dialog"/);
@@ -1408,7 +1412,7 @@ test("electron tab controller lets macOS content shortcuts pass through while cl
   assert.equal(controller.getState().activeTabId, 1);
 });
 
-test("electron tab controller opens tab search with Ctrl+Backquote and Ctrl+Shift+P", () => {
+test("electron tab controller opens tab search with Ctrl+Backquote and platform command palette shortcut", () => {
   const { createElectronTabController } = require("../src/electron-tabs");
 
   const beforeInputHandlers = [];
@@ -1489,6 +1493,47 @@ test("electron tab controller opens tab search with Ctrl+Backquote and Ctrl+Shif
   assert.equal(toggleCount, 1);
   assert.equal(openCount, 1);
 
+  prevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        prevented = true;
+      },
+    },
+    {
+      type: "keyDown",
+      alt: false,
+      control: false,
+      meta: true,
+      shift: true,
+      key: "P",
+      code: "KeyP",
+      platform: "darwin",
+    },
+  );
+
+  assert.equal(prevented, true);
+  assert.equal(toggleCount, 1);
+  assert.equal(openCount, 2);
+
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        throw new Error("Command+Shift+P must pass through outside macOS");
+      },
+    },
+    {
+      type: "keyDown",
+      alt: false,
+      control: false,
+      meta: true,
+      shift: true,
+      key: "P",
+      code: "KeyP",
+      platform: "win32",
+    },
+  );
+
   beforeInputHandlers.at(-1)(
     {
       preventDefault() {
@@ -1506,7 +1551,7 @@ test("electron tab controller opens tab search with Ctrl+Backquote and Ctrl+Shif
   );
 
   assert.equal(toggleCount, 1);
-  assert.equal(openCount, 1);
+  assert.equal(openCount, 2);
 });
 
 test("electron tab controller reopens the last closed tab with Command+Shift+T", () => {
