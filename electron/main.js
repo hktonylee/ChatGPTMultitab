@@ -18,8 +18,8 @@ const TOP_BAR_HEIGHT = 42;
 const SESSION_FILE_NAME = "chatgpt-multitab-session.json";
 const APP_ICON_FILE = "favicon-inverted.png";
 const NEW_TAB_ARG = "--new-tab";
-const NEW_TAB_SHORTCUTS = Object.freeze(["Super+C"]);
 const IS_MACOS = process.platform === "darwin";
+const NEW_TAB_SHORTCUTS = Object.freeze([IS_MACOS ? "Command+Shift+C" : "Super+C"]);
 
 let mainWindow = null;
 let tabController = null;

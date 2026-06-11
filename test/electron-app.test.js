@@ -54,11 +54,11 @@ test("electron main window returns focus to the active ChatGPT view when refocus
   assert.match(mainSource, /tabController\.focusActiveTab\(\)/);
 });
 
-test("electron main process registers Win+C to focus the app and open or reuse a new-tab target", () => {
+test("electron main process registers Command+Shift+C on macOS to focus the app and open or reuse a new-tab target", () => {
   const mainSource = readRepoFile("electron", "main.js");
 
   assert.match(mainSource, /globalShortcut/);
-  assert.match(mainSource, /const NEW_TAB_SHORTCUTS = Object\.freeze\(\["Super\+C"\]\);/);
+  assert.match(mainSource, /const NEW_TAB_SHORTCUTS = Object\.freeze\(\[IS_MACOS \? "Command\+Shift\+C" : "Super\+C"\]\);/);
   assert.doesNotMatch(mainSource, /Super\+Enter/);
   assert.match(mainSource, /function registerNewTabShortcuts\(\)/);
   assert.match(mainSource, /NEW_TAB_SHORTCUTS\.forEach\(\(shortcut\) => \{/);
