@@ -117,6 +117,14 @@ function isCursorAfterSearchText() {
   return input.selectionStart === input.value.length && input.selectionEnd === input.value.length;
 }
 
+function isCloseSelectedTabShortcut(event) {
+  if (event.ctrlKey && event.key === "Delete") {
+    return true;
+  }
+
+  return window.chatgptTabs.platform === "darwin" && event.metaKey && event.key === "Backspace";
+}
+
 input.addEventListener("input", () => renderResults({ resetSelection: true }));
 
 document.addEventListener("keydown", (event) => {
@@ -133,7 +141,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 input.addEventListener("keydown", (event) => {
-  if (event.ctrlKey && event.key === "Delete") {
+  if (isCloseSelectedTabShortcut(event)) {
     event.preventDefault();
     closeSelectedTab();
     return;

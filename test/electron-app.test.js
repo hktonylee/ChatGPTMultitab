@@ -206,6 +206,10 @@ test("electron app provides a topmost tab search palette", () => {
   assert.match(mainSource, /view\.setBackgroundColor\("#00000000"\)/);
   assert.match(mainSource, /tabSearchView\.webContents\.send\("tabs:searchOpened"/);
   assert.match(mainSource, /onToggleTabSearch: toggleTabSearch/);
+  assert.match(mainSource, /function installApplicationMenu\(\)/);
+  assert.match(mainSource, /accelerator:\s*"Command\+Shift\+P"/);
+  assert.match(mainSource, /click:\s*\(\) => openTabSearch\(\)/);
+  assert.match(mainSource, /Menu\.setApplicationMenu/);
   assert.match(mainSource, /ipcMain\.handle\("tabs:toggleSearch"/);
   assert.match(mainSource, /ipcMain\.handle\("tabs:openSearch"/);
   assert.match(mainSource, /ipcMain\.handle\("tabs:closeSearch"/);
@@ -230,7 +234,10 @@ test("electron app provides a topmost tab search palette", () => {
   assert.match(searchSource, /event\.key === "ArrowDown"/);
   assert.match(searchSource, /event\.key === "ArrowUp"/);
   assert.match(searchSource, /event\.key === "Enter"/);
+  assert.match(searchSource, /function isCloseSelectedTabShortcut\(event\)/);
   assert.match(searchSource, /event\.ctrlKey && event\.key === "Delete"/);
+  assert.match(searchSource, /window\.chatgptTabs\.platform === "darwin" && event\.metaKey && event\.key === "Backspace"/);
+  assert.match(searchSource, /isCloseSelectedTabShortcut\(event\)/);
   assert.match(searchSource, /function isCursorAfterSearchText\(\)/);
   assert.match(searchSource, /input\.selectionStart === input\.value\.length/);
   assert.match(searchSource, /input\.selectionEnd === input\.value\.length/);

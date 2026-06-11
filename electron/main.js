@@ -219,6 +219,29 @@ function registerNewTabShortcuts() {
   });
 }
 
+function installApplicationMenu() {
+  if (!IS_MACOS) {
+    return;
+  }
+
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      {
+        label: app.name,
+        submenu: [
+          {
+            label: "Command Palette",
+            accelerator: "Command+Shift+P",
+            click: () => openTabSearch(),
+          },
+          { type: "separator" },
+          { role: "quit" },
+        ],
+      },
+    ]),
+  );
+}
+
 function showNewTabMenu() {
   if (!mainWindow || mainWindow.isDestroyed()) {
     return false;
@@ -390,6 +413,7 @@ function createMainWindow() {
   tabSearchView = createTabSearchView();
   tabSearchView.setBounds(getTabSearchBounds(mainWindow));
   mainWindow.contentView.addChildView(tabSearchView);
+  installApplicationMenu();
 
   mainWindow.on("resize", () => {
     tabController.setBounds(getChatBounds(mainWindow));
