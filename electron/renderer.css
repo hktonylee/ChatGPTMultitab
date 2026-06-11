@@ -39,6 +39,18 @@ body {
   user-select: none;
 }
 
+body.platform-macos .tab-strip {
+  padding-left: 80px;
+  -webkit-app-region: drag;
+}
+
+body.platform-macos .tab-list,
+body.platform-macos .tab,
+body.platform-macos .tab-close,
+body.platform-macos .toolbar-button {
+  -webkit-app-region: no-drag;
+}
+
 .tab-cluster,
 .tab-actions {
   display: flex;

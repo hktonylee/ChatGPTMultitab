@@ -249,12 +249,10 @@ test("electron app provides a topmost tab search palette", () => {
   assert.doesNotMatch(searchStyles, /\.tab-search-row\[data-active="true"\]\s+\.tab-search-select\s*\{\s*font-weight:/);
 });
 
-test("renderer leaves new and close shortcuts to the managed chat webContents", () => {
+test("renderer leaves new tab shortcuts to the managed chat webContents", () => {
   const rendererSource = readRepoFile("electron", "renderer.js");
 
   assert.doesNotMatch(rendererSource, /String\(event\.key\)\.toLowerCase\(\) === "t"/);
-  assert.doesNotMatch(rendererSource, /String\(event\.key\)\.toLowerCase\(\) === "w"/);
-  assert.doesNotMatch(rendererSource, /window\.chatgptTabs\.closeTab\(currentState\.activeTabId\)/);
   assert.match(rendererSource, /event\.key === "Tab"/);
   assert.match(rendererSource, /event\.code === "BracketLeft"/);
   assert.match(rendererSource, /event\.code === "BracketRight"/);
@@ -407,7 +405,9 @@ test("renderer marks unloaded tabs with a distinct tab strip state", () => {
 test("renderer keeps readable tab widths in a horizontally scrollable tab strip", () => {
   const rendererSource = readRepoFile("electron", "renderer.js");
   const rendererStyles = readRepoFile("electron", "renderer.css");
+  const preloadSource = readRepoFile("electron", "preload.js");
 
+  assert.match(preloadSource, /platform:\s*process\.platform/);
   assert.match(rendererSource, /window\.chatgptTabs\.platform === "darwin"/);
   assert.match(rendererStyles, /body\.platform-macos \.tab-strip\s*\{[^}]*padding-left:\s*80px/s);
   assert.match(rendererStyles, /body\.platform-macos \.tab-strip\s*\{[^}]*-webkit-app-region:\s*drag/s);
@@ -436,6 +436,17 @@ test("renderer keeps readable tab widths in a horizontally scrollable tab strip"
   assert.match(rendererSource, /const TAB_LIST_WHEEL_SCROLL_MULTIPLIER = 3;/);
   assert.match(rendererSource, /tabList\.scrollBy\(\{\s*left: event\.deltaY \* TAB_LIST_WHEEL_SCROLL_MULTIPLIER,\s*behavior: "smooth",\s*\}\)/s);
   assert.doesNotMatch(rendererSource, /tabList\.scrollLeft \+= event\.deltaY/);
+});
+
+test("renderer shell closes the active tab with Command+W on macOS without stealing Command+P or Command+Delete", () => {
+  const rendererSource = readRepoFile("electron", "renderer.js");
+
+  assert.match(rendererSource, /event\.metaKey && !event\.ctrlKey && !event\.shiftKey/);
+  assert.match(rendererSource, /const key = String\(event\.key \|\| ""\)\.toLowerCase\(\);/);
+  assert.match(rendererSource, /key === "w"/);
+  assert.match(rendererSource, /window\.chatgptTabs\.closeTab\(currentState\.activeTabId\)/);
+  assert.doesNotMatch(rendererSource, /key === "p"/);
+  assert.doesNotMatch(rendererSource, /key === "delete"/);
 });
 
 test("electron tab controller attaches only the active WebContentsView", () => {
@@ -1310,6 +1321,91 @@ test("electron tab controller handles webContents shortcuts before window defaul
   assert.equal(reloadPrevented, true);
   assert.equal(reloadCount, 1);
   assert.equal(controller.getState().tabs.length, 3);
+});
+
+test("electron tab controller lets macOS content shortcuts pass through while closing tabs with Command+W", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const beforeInputHandlers = [];
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on(eventName, handler) {
+          if (eventName === "before-input-event") {
+            beforeInputHandlers.push(handler);
+          }
+        },
+        close() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  controller.createTab("https://chatgpt.com/c/second");
+
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        throw new Error("Command+P must pass through to ChatGPT");
+      },
+    },
+    {
+      type: "keyDown",
+      alt: false,
+      control: false,
+      meta: true,
+      shift: false,
+      key: "p",
+      code: "KeyP",
+    },
+  );
+
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        throw new Error("Command+Delete must pass through to ChatGPT");
+      },
+    },
+    {
+      type: "keyDown",
+      alt: false,
+      control: false,
+      meta: true,
+      shift: false,
+      key: "Delete",
+      code: "Delete",
+    },
+  );
+
+  let prevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        prevented = true;
+      },
+    },
+    {
+      type: "keyDown",
+      alt: false,
+      control: false,
+      meta: true,
+      shift: false,
+      key: "w",
+      code: "KeyW",
+    },
+  );
+
+  assert.equal(prevented, true);
+  assert.equal(controller.getState().tabs.length, 1);
+  assert.equal(controller.getState().activeTabId, 1);
 });
 
 test("electron tab controller opens tab search with Ctrl+Backquote and Ctrl+Shift+P", () => {

@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("chatgptTabs", {
+  platform: process.platform,
   getState: () => ipcRenderer.invoke("tabs:getState"),
   createTab: (url) => ipcRenderer.invoke("tabs:create", url),
   activateTab: (id) => ipcRenderer.invoke("tabs:activate", id),

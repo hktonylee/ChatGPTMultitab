@@ -180,6 +180,17 @@ tabList.addEventListener("scroll", updateTabOverflowIndicators);
 window.addEventListener("resize", updateTabOverflowIndicators);
 
 document.addEventListener("keydown", (event) => {
+  if (event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+    const key = String(event.key || "").toLowerCase();
+
+    if (key === "w") {
+      event.preventDefault();
+      window.chatgptTabs.closeTab(currentState.activeTabId);
+    }
+
+    return;
+  }
+
   if (event.altKey || !(event.ctrlKey || event.metaKey)) {
     return;
   }
