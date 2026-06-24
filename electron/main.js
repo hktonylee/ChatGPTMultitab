@@ -3,6 +3,7 @@ const path = require("node:path");
 const {
   app,
   BrowserWindow,
+  clipboard,
   dialog,
   globalShortcut,
   Menu,
@@ -322,6 +323,10 @@ function showTabContextMenu(event, id) {
     {
       label: "Reload the page",
       click: () => controller.reloadTab(tabId),
+    },
+    {
+      label: "Copy tab URL",
+      click: () => clipboard.writeText(tab.url),
     },
     {
       label: "Open the tab in external browser",
