@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "ChatGPT Multitab",
   "description": "Creates a multitab ChatGPT workspace with trusted frame access for configured exact URLs.",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "permissions": [
     "activeTab",
     "cookies",
