@@ -24,9 +24,17 @@
     return tabState;
   }
 
+  function createBookmarkState(title = DEFAULT_CHAT_TITLE, url = DEFAULT_CHAT_URL) {
+    return {
+      title: String(title || "").trim() || DEFAULT_CHAT_TITLE,
+      url: normalizeTabUrl(url),
+    };
+  }
+
   function buildInitialTabState() {
     return {
       activeTabId: 1,
+      bookmarkedTabs: [],
       closedTabs: [],
       tabs: [createTabState(1)],
     };
@@ -69,6 +77,18 @@
   }
 
   function sanitizeStoredTabState(storedState) {
+    const rawBookmarkedTabs = Array.isArray(storedState?.bookmarkedTabs)
+      ? storedState.bookmarkedTabs
+      : [];
+    const bookmarkedTabs = rawBookmarkedTabs
+      .map((bookmark) => {
+        if (!bookmark || typeof bookmark !== "object" || !String(bookmark?.url || "").trim()) {
+          return null;
+        }
+
+        return createBookmarkState(bookmark?.title, bookmark?.url);
+      })
+      .filter(Boolean);
     const rawClosedTabs = Array.isArray(storedState?.closedTabs) ? storedState.closedTabs : [];
     const closedTabs = rawClosedTabs
       .map((tab) => {
@@ -108,6 +128,7 @@
 
     return {
       activeTabId,
+      bookmarkedTabs,
       closedTabs,
       tabs,
     };
@@ -117,6 +138,7 @@
     DEFAULT_CHAT_URL,
     DEFAULT_CHAT_TITLE,
     buildInitialTabState,
+    createBookmarkState,
     createTabState,
     isChatGptUrl,
     normalizeTabUrl,

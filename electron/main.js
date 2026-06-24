@@ -247,6 +247,7 @@ function showNewTabMenu() {
     return false;
   }
 
+  const bookmarkedTabs = getController().getState().bookmarkedTabs;
   const menu = Menu.buildFromTemplate([
     {
       label: "Open a new tab",
@@ -257,6 +258,17 @@ function showNewTabMenu() {
       enabled: getController().getState().closedTabs.length > 0,
       click: () => getController().restoreClosedTab(),
     },
+    ...(bookmarkedTabs.length > 0
+      ? [
+          {
+            type: "separator",
+          },
+          ...bookmarkedTabs.map((bookmark) => ({
+            label: bookmark.title,
+            click: () => getController().openBookmarkedTab(bookmark.url),
+          })),
+        ]
+      : []),
   ]);
 
   menu.popup({ window: mainWindow });
@@ -299,6 +311,10 @@ function showTabContextMenu(event, id) {
     {
       label: tab.isStarred ? "Unstar this tab" : "Star this tab",
       click: () => controller.toggleTabStar(tabId),
+    },
+    {
+      label: controller.isTabBookmarked(tabId) ? "Un-bookmark this tab" : "Bookmark this tab",
+      click: () => controller.toggleTabBookmark(tabId),
     },
     {
       type: "separator",

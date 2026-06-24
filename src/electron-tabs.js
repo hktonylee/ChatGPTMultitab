@@ -1,6 +1,7 @@
 const {
   DEFAULT_CHAT_URL,
   DEFAULT_CHAT_TITLE,
+  createBookmarkState,
   createTabState,
   normalizeTabUrl,
   sanitizeStoredTabState,
@@ -38,6 +39,13 @@ function serializeClosedTab(tab) {
   const tabState = serializeTab(tab);
   delete tabState.isStarred;
   return tabState;
+}
+
+function serializeBookmark(bookmark) {
+  return {
+    title: bookmark.title,
+    url: bookmark.url,
+  };
 }
 
 function normalizeBounds(bounds) {
@@ -83,6 +91,7 @@ function createElectronTabController({
 
   let bounds = normalizeBounds(initialBounds);
   let attachedView = null;
+  let bookmarkedTabs = [];
   let closedTabs = [];
   let activeTabId = 1;
   let nextTabId = 1;
@@ -343,9 +352,15 @@ function createElectronTabController({
     return createManagedTab(createTabState(nextTabId, DEFAULT_CHAT_TITLE, DEFAULT_CHAT_URL));
   }
 
+  function findBookmarkIndexByUrl(url) {
+    const normalizedUrl = normalizeTabUrl(url);
+    return bookmarkedTabs.findIndex((bookmark) => bookmark.url === normalizedUrl);
+  }
+
   function loadInitialState(state) {
     const session = sanitizeStoredTabState(state);
     const initiallyLoadedTabIds = getInitiallyLoadedTabIds(session.tabs, session.activeTabId);
+    bookmarkedTabs = session.bookmarkedTabs;
     closedTabs = session.closedTabs;
     activeTabId = session.activeTabId;
     session.tabs.forEach((tabState) => {
@@ -363,6 +378,7 @@ function createElectronTabController({
     getState() {
       return {
         activeTabId,
+        bookmarkedTabs: bookmarkedTabs.map(serializeBookmark),
         closedTabs,
         tabs: tabs.map(serializeTab),
       };
@@ -453,6 +469,47 @@ function createElectronTabController({
       return tab;
     },
 
+    isTabBookmarked(id) {
+      const tab = tabs.find((item) => item.id === Number(id));
+
+      if (!tab) {
+        return false;
+      }
+
+      return findBookmarkIndexByUrl(tab.url) >= 0;
+    },
+
+    toggleTabBookmark(id) {
+      const tab = tabs.find((item) => item.id === Number(id));
+
+      if (!tab) {
+        return null;
+      }
+
+      const bookmarkIndex = findBookmarkIndexByUrl(tab.url);
+
+      if (bookmarkIndex >= 0) {
+        bookmarkedTabs.splice(bookmarkIndex, 1);
+        emitStateChange();
+        return null;
+      }
+
+      const bookmark = createBookmarkState(tab.title, tab.url);
+      bookmarkedTabs.push(bookmark);
+      emitStateChange();
+      return serializeBookmark(bookmark);
+    },
+
+    openBookmarkedTab(url) {
+      const bookmarkIndex = findBookmarkIndexByUrl(url);
+
+      if (bookmarkIndex < 0) {
+        return null;
+      }
+
+      return controller.createTab(bookmarkedTabs[bookmarkIndex].url);
+    },
+
     reloadTab(id) {
       const tab = tabs.find((item) => item.id === Number(id));
 
@@ -515,6 +572,12 @@ function createElectronTabController({
 
       if (typeof updates?.url === "string" && updates.url.trim()) {
         tab.url = updates.url;
+      }
+
+      const bookmarkIndex = findBookmarkIndexByUrl(tab.url);
+
+      if (bookmarkIndex >= 0 && tab.title) {
+        bookmarkedTabs[bookmarkIndex] = createBookmarkState(tab.title, tab.url);
       }
 
       emitStateChange();

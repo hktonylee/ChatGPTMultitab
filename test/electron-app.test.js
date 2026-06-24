@@ -282,6 +282,9 @@ test("new tab button opens a restore menu on long press", () => {
   assert.match(mainSource, /label:\s*"Open a new tab"/);
   assert.match(mainSource, /label:\s*"Re-open the closed tab"/);
   assert.match(mainSource, /enabled:\s*getController\(\)\.getState\(\)\.closedTabs\.length > 0/);
+  assert.match(mainSource, /getController\(\)\.getState\(\)\.bookmarkedTabs/);
+  assert.match(mainSource, /label:\s*bookmark\.title/);
+  assert.match(mainSource, /click:\s*\(\) => getController\(\)\.openBookmarkedTab\(bookmark\.url\)/);
   assert.match(mainSource, /ipcMain\.handle\("tabs:showNewTabMenu"/);
   assert.match(preloadSource, /showNewTabMenu: \(\) => ipcRenderer\.invoke\("tabs:showNewTabMenu"\)/);
   assert.match(rendererSource, /const NEW_TAB_MENU_HOLD_MS = 500;/);
@@ -369,7 +372,7 @@ test("electron main process shows grouped target-tab context menu actions", () =
   assert.match(mainSource, /ipcMain\.on\("tabs:showContextMenu"/);
   assert.match(
     mainSource,
-    /label:\s*tab\.isStarred \? "Unstar this tab" : "Star this tab"[\s\S]*type:\s*"separator"[\s\S]*label:\s*"Reload the page"[\s\S]*label:\s*"Open the tab in external browser"[\s\S]*type:\s*"separator"[\s\S]*label:\s*"Close this tab"[\s\S]*label:\s*"Close all tabs on the left"[\s\S]*label:\s*"Close all tabs"/,
+    /label:\s*tab\.isStarred \? "Unstar this tab" : "Star this tab"[\s\S]*label:\s*controller\.isTabBookmarked\(tabId\) \? "Un-bookmark this tab" : "Bookmark this tab"[\s\S]*type:\s*"separator"[\s\S]*label:\s*"Reload the page"[\s\S]*label:\s*"Open the tab in external browser"[\s\S]*type:\s*"separator"[\s\S]*label:\s*"Close this tab"[\s\S]*label:\s*"Close all tabs on the left"[\s\S]*label:\s*"Close all tabs"/,
   );
   assert.match(mainSource, /controller\.reloadTab\(tabId\)/);
   assert.match(mainSource, /shell\.openExternal\(tab\.url\)/);
@@ -386,6 +389,8 @@ test("electron app shows and toggles starred tabs from the target-tab context me
   assert.match(rendererSource, /tab\.isStarred \? "⭐ " : ""/);
   assert.match(mainSource, /label:\s*tab\.isStarred \? "Unstar this tab" : "Star this tab"/);
   assert.match(mainSource, /controller\.toggleTabStar\(tabId\)/);
+  assert.match(mainSource, /label:\s*controller\.isTabBookmarked\(tabId\) \? "Un-bookmark this tab" : "Bookmark this tab"/);
+  assert.match(mainSource, /controller\.toggleTabBookmark\(tabId\)/);
   assert.match(mainSource, /controller\.closeTab\(tabId,\s*\{\s*force:\s*true\s*\}\)/);
 });
 
@@ -1122,6 +1127,54 @@ test("electron tab controller skips starred tabs during batch close", () => {
   assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [secondTab.id, thirdTab.id]);
   assert.deepEqual(controller.closeAllTabs().map((tab) => tab.id), [thirdTab.id]);
   assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [secondTab.id]);
+});
+
+test("electron tab controller toggles bookmarks and reopens bookmarked urls", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const loadedUrls = [];
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL(url) {
+          loadedUrls.push(url);
+        },
+        on() {},
+        close() {},
+        focus() {},
+      },
+    };
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const tab = controller.createTab("https://chatgpt.com/g/g-abc-custom");
+
+  controller.updateTab(tab.id, { title: "Custom GPT" });
+
+  assert.equal(controller.isTabBookmarked(tab.id), false);
+  assert.deepEqual(controller.toggleTabBookmark(tab.id), {
+    title: "Custom GPT",
+    url: "https://chatgpt.com/g/g-abc-custom",
+  });
+  assert.equal(controller.isTabBookmarked(tab.id), true);
+  assert.deepEqual(controller.getState().bookmarkedTabs, [
+    { title: "Custom GPT", url: "https://chatgpt.com/g/g-abc-custom" },
+  ]);
+
+  const reopenedTab = controller.openBookmarkedTab("https://chatgpt.com/g/g-abc-custom");
+
+  assert.equal(reopenedTab.url, "https://chatgpt.com/g/g-abc-custom");
+  assert.equal(controller.getState().activeTabId, reopenedTab.id);
+  assert.equal(loadedUrls.at(-1), "https://chatgpt.com/g/g-abc-custom");
+  assert.deepEqual(controller.toggleTabBookmark(tab.id), null);
+  assert.equal(controller.isTabBookmarked(tab.id), false);
+  assert.deepEqual(controller.getState().bookmarkedTabs, []);
 });
 
 test("electron tab controller force closes a starred tab without restoring its star", () => {

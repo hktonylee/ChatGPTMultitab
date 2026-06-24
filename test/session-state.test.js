@@ -19,6 +19,7 @@ test("creates a default tab state from a chat id", () => {
 test("builds the initial stored session state", () => {
   assert.deepEqual(buildInitialTabState(), {
     activeTabId: 1,
+    bookmarkedTabs: [],
     closedTabs: [],
     tabs: [
       {
@@ -34,6 +35,10 @@ test("sanitizes stored tab session state", () => {
   assert.deepEqual(
     sanitizeStoredTabState({
       activeTabId: 4,
+      bookmarkedTabs: [
+        { title: "  Custom GPT  ", url: "https://chatgpt.com/g/g-abc-custom" },
+        { title: "Ignored", url: "https://example.com/" },
+      ],
       closedTabs: [
         { id: 8, title: "  ", url: "https://chatgpt.com/c/closed" },
         { id: "bad", title: "Ignored", url: "https://example.com" },
@@ -46,6 +51,10 @@ test("sanitizes stored tab session state", () => {
     }),
     {
       activeTabId: 4,
+      bookmarkedTabs: [
+        { title: "Custom GPT", url: "https://chatgpt.com/g/g-abc-custom" },
+        { title: "Ignored", url: DEFAULT_CHAT_URL },
+      ],
       closedTabs: [
         { id: 8, title: "ChatGPT", url: "https://chatgpt.com/c/closed" },
       ],
@@ -100,6 +109,22 @@ test("falls back to an empty closed tab stack when stored closed tabs are unusab
         { id: 6, title: "Saved tab", url: "https://chatgpt.com/c/open" },
       ],
     }).closedTabs,
+    [],
+  );
+});
+
+test("falls back to an empty bookmark list when stored bookmarks are unusable", () => {
+  assert.deepEqual(
+    sanitizeStoredTabState({
+      activeTabId: 6,
+      bookmarkedTabs: [
+        { title: "Missing URL" },
+        "bad",
+      ],
+      tabs: [
+        { id: 6, title: "Saved tab", url: "https://chatgpt.com/c/open" },
+      ],
+    }).bookmarkedTabs,
     [],
   );
 });
