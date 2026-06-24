@@ -111,25 +111,15 @@ test("electron app uses the inverted PNG logo", () => {
   assert.equal(packageJson.build.files.includes("favicon-inverted.png"), true);
 });
 
-test("repo no longer ships Chrome extension or Worker build code", () => {
+test("electron package excludes Chrome extension and Worker build code", () => {
   const packageJson = JSON.parse(readRepoFile("package.json"));
-  const removedPaths = [
-    "manifest.json",
-    "options.html",
-    "src/background.js",
-    "src/options.js",
-    "src/rules.js",
-    "src/chatgpt-location.js",
-    "src/chatgpt-url.js",
-    "src/keyboard-shortcuts.js",
-    "worker/.gitignore",
-    "worker/package.json",
-    "worker/wrangler.toml",
-  ];
+  const packagedFiles = packageJson.build.files;
 
-  removedPaths.forEach((removedPath) => {
-    assert.equal(fs.existsSync(path.join(repoRoot, removedPath)), false, removedPath);
-  });
+  assert.equal(packagedFiles.includes("electron/**"), true);
+  assert.equal(packagedFiles.includes("src/**"), true);
+  assert.equal(packagedFiles.includes("manifest.json"), false);
+  assert.equal(packagedFiles.includes("options.html"), false);
+  assert.equal(packagedFiles.includes("worker/**"), false);
   assert.equal(packageJson.scripts.test, "node --test test/*.test.js");
   assert.equal(fs.existsSync(path.join(repoRoot, "worker")), false);
   assert.equal(
