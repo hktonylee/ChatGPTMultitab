@@ -199,6 +199,7 @@ test("electron app provides a topmost tab search palette", () => {
   assert.match(mainSource, /function installApplicationMenu\(\)/);
   assert.match(mainSource, /accelerator:\s*"Command\+Shift\+P"/);
   assert.match(mainSource, /click:\s*\(\) => openTabSearch\(\)/);
+  assert.match(mainSource, /role:\s*"editMenu"/);
   assert.match(mainSource, /Menu\.setApplicationMenu/);
   assert.match(mainSource, /ipcMain\.handle\("tabs:toggleSearch"/);
   assert.match(mainSource, /ipcMain\.handle\("tabs:openSearch"/);

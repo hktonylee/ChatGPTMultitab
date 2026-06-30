@@ -239,6 +239,7 @@ function installApplicationMenu() {
           { role: "quit" },
         ],
       },
+      { role: "editMenu" },
     ]),
   );
 }
