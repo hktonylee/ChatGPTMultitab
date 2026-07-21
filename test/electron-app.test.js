@@ -32,8 +32,21 @@ test("electron main process wraps ChatGPT pages in WebContentsView instances", (
 test("electron main process configures permissions through the Electron session module", () => {
   const mainSource = readRepoFile("electron", "main.js");
 
+  assert.match(mainSource, /session\.defaultSession\.setPermissionCheckHandler/);
   assert.match(mainSource, /session\.defaultSession\.setPermissionRequestHandler/);
+  assert.match(mainSource, /isAllowedPermission\(permission\)/);
   assert.doesNotMatch(mainSource, /app\.session/);
+});
+
+test("macOS app requests microphone access when macOS has not prompted yet", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+
+  assert.match(mainSource, /systemPreferences/);
+  assert.match(mainSource, /function requestMacMicrophoneAccess\(\)/);
+  assert.match(mainSource, /systemPreferences\.getMediaAccessStatus\("microphone"\)/);
+  assert.match(mainSource, /"not-determined"/);
+  assert.match(mainSource, /systemPreferences\.askForMediaAccess\("microphone"\)/);
+  assert.match(mainSource, /requestMacMicrophoneAccess\(\)/);
 });
 
 test("electron main window hides the native menu bar", () => {

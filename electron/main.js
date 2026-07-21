@@ -11,6 +11,7 @@ const {
   ipcMain,
   session,
   shell,
+  systemPreferences,
 } = require("electron");
 const { createElectronTabController } = require("../src/electron-tabs");
 const { isChatGptUrl, normalizeTabUrl } = require("../src/session-state");
@@ -21,6 +22,7 @@ const APP_ICON_FILE = "favicon-inverted.png";
 const NEW_TAB_ARG = "--new-tab";
 const IS_MACOS = process.platform === "darwin";
 const NEW_TAB_SHORTCUTS = Object.freeze([IS_MACOS ? "Command+Shift+C" : "Super+C"]);
+const ALLOWED_PERMISSIONS = Object.freeze(["camera", "clipboard-sanitized-write", "geolocation", "media"]);
 
 let mainWindow = null;
 let tabController = null;
@@ -217,6 +219,27 @@ function registerNewTabShortcuts() {
     if (!registered) {
       console.warn(`Failed to register global shortcut ${shortcut}`);
     }
+  });
+}
+
+function isAllowedPermission(permission) {
+  return ALLOWED_PERMISSIONS.includes(permission);
+}
+
+function configurePermissionHandlers() {
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission) => isAllowedPermission(permission));
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(isAllowedPermission(permission));
+  });
+}
+
+function requestMacMicrophoneAccess() {
+  if (!IS_MACOS || systemPreferences.getMediaAccessStatus("microphone") !== "not-determined") {
+    return;
+  }
+
+  systemPreferences.askForMediaAccess("microphone").catch((error) => {
+    console.warn(`Failed to request microphone access: ${error.message}`);
   });
 }
 
@@ -502,10 +525,8 @@ if (!gotSingleInstanceLock) {
   });
 
   app.whenReady().then(() => {
-    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-      callback(["camera", "clipboard-sanitized-write", "geolocation", "media"].includes(permission));
-    });
-
+    configurePermissionHandlers();
+    requestMacMicrophoneAccess();
     createMainWindow();
     registerNewTabShortcuts();
 
