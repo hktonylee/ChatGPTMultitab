@@ -111,6 +111,14 @@ test("electron app uses the inverted PNG logo", () => {
   assert.equal(packageJson.build.files.includes("favicon-inverted.png"), true);
 });
 
+test("macOS package declares why the app needs microphone access", () => {
+  const packageJson = JSON.parse(readRepoFile("package.json"));
+  const microphoneUsageDescription = packageJson.build.mac.extendInfo?.NSMicrophoneUsageDescription;
+
+  assert.equal(typeof microphoneUsageDescription, "string");
+  assert.match(microphoneUsageDescription, /microphone/i);
+});
+
 test("electron package excludes Chrome extension and Worker build code", () => {
   const packageJson = JSON.parse(readRepoFile("package.json"));
   const packagedFiles = packageJson.build.files;

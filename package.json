@@ -35,6 +35,9 @@
         "dmg",
         "zip"
       ],
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "ChatGPT Multitab needs microphone access for ChatGPT voice input."
+      },
       "category": "public.app-category.productivity"
     },
     "nsis": {
