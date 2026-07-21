@@ -35,6 +35,8 @@
         "dmg",
         "zip"
       ],
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
       "extendInfo": {
         "NSMicrophoneUsageDescription": "ChatGPT Multitab needs microphone access for ChatGPT voice input."
       },

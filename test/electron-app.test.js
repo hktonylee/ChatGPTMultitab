@@ -132,6 +132,21 @@ test("macOS package declares why the app needs microphone access", () => {
   assert.match(microphoneUsageDescription, /microphone/i);
 });
 
+test("macOS package signs the app with audio input entitlement", () => {
+  const packageJson = JSON.parse(readRepoFile("package.json"));
+  const entitlementsPath = packageJson.build.mac.entitlements;
+  const inheritedEntitlementsPath = packageJson.build.mac.entitlementsInherit;
+
+  assert.equal(entitlementsPath, "build/entitlements.mac.plist");
+  assert.equal(inheritedEntitlementsPath, entitlementsPath);
+
+  const entitlements = readRepoFile(entitlementsPath);
+  assert.match(entitlements, /com\.apple\.security\.device\.audio-input/);
+  assert.match(entitlements, /com\.apple\.security\.cs\.allow-jit/);
+  assert.match(entitlements, /com\.apple\.security\.cs\.allow-unsigned-executable-memory/);
+  assert.match(entitlements, /com\.apple\.security\.cs\.disable-library-validation/);
+});
+
 test("electron package excludes Chrome extension and Worker build code", () => {
   const packageJson = JSON.parse(readRepoFile("package.json"));
   const packagedFiles = packageJson.build.files;
