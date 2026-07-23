@@ -29,6 +29,19 @@ test("electron main process wraps ChatGPT pages in WebContentsView instances", (
   assert.doesNotMatch(mainSource, /<iframe/i);
 });
 
+test("electron main process routes popup requests by ChatGPT ownership", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+  const handlerMatch = mainSource.match(
+    /view\.webContents\.setWindowOpenHandler\(\(\{ url \}\) => \{(?<body>[\s\S]*?)\n  \}\);/,
+  );
+
+  assert.ok(handlerMatch);
+  assert.match(handlerMatch.groups.body, /if \(isChatGptUrl\(url\)\) \{/);
+  assert.match(handlerMatch.groups.body, /tabController\.createTab\(url\)/);
+  assert.match(handlerMatch.groups.body, /else \{\s*shell\.openExternal\(url\)/);
+  assert.match(handlerMatch.groups.body, /return \{ action: "deny" \}/);
+});
+
 test("electron main process configures permissions through the Electron session module", () => {
   const mainSource = readRepoFile("electron", "main.js");
 

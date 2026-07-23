@@ -401,7 +401,12 @@ function createChatView() {
   });
 
   view.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    if (isChatGptUrl(url)) {
+      tabController.createTab(url);
+    } else {
+      shell.openExternal(url);
+    }
+
     return { action: "deny" };
   });
 
