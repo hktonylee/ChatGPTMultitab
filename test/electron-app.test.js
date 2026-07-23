@@ -29,17 +29,32 @@ test("electron main process wraps ChatGPT pages in WebContentsView instances", (
   assert.doesNotMatch(mainSource, /<iframe/i);
 });
 
-test("electron main process routes popup requests by ChatGPT ownership", () => {
-  const mainSource = readRepoFile("electron", "main.js");
-  const handlerMatch = mainSource.match(
-    /view\.webContents\.setWindowOpenHandler\(\(\{ url \}\) => \{(?<body>[\s\S]*?)\n  \}\);/,
-  );
+test("electron main process routes popup requests by secure ChatGPT ownership", () => {
+  const popupRoutingPath = path.join(repoRoot, "src", "popup-routing.js");
 
-  assert.ok(handlerMatch);
-  assert.match(handlerMatch.groups.body, /if \(isChatGptUrl\(url\)\) \{/);
-  assert.match(handlerMatch.groups.body, /tabController\.createTab\(url\)/);
-  assert.match(handlerMatch.groups.body, /else \{\s*shell\.openExternal\(url\)/);
-  assert.match(handlerMatch.groups.body, /return \{ action: "deny" \}/);
+  assert.equal(fs.existsSync(popupRoutingPath), true);
+
+  const { createPopupOpenHandler } = require(popupRoutingPath);
+  const cases = [
+    ["https://chatgpt.com/c/abc", "tab"],
+    ["https://www.chatgpt.com/g/g-abc", "tab"],
+    ["https://openai.com/", "external"],
+    ["http://chatgpt.com/", "external"],
+    ["mailto:support@example.com", "external"],
+  ];
+
+  cases.forEach(([url, destination]) => {
+    const openedTabs = [];
+    const openedExternalUrls = [];
+    const handler = createPopupOpenHandler({
+      createTab: (tabUrl) => openedTabs.push(tabUrl),
+      openExternal: (externalUrl) => openedExternalUrls.push(externalUrl),
+    });
+
+    assert.deepEqual(handler({ url }), { action: "deny" }, url);
+    assert.deepEqual(openedTabs, destination === "tab" ? [url] : [], url);
+    assert.deepEqual(openedExternalUrls, destination === "external" ? [url] : [], url);
+  });
 });
 
 test("electron main process configures permissions through the Electron session module", () => {

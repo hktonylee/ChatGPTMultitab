@@ -14,6 +14,7 @@ const {
   systemPreferences,
 } = require("electron");
 const { createElectronTabController } = require("../src/electron-tabs");
+const { createPopupOpenHandler } = require("../src/popup-routing");
 const { isChatGptUrl, normalizeTabUrl } = require("../src/session-state");
 
 const TOP_BAR_HEIGHT = 42;
@@ -400,15 +401,12 @@ function createChatView() {
     },
   });
 
-  view.webContents.setWindowOpenHandler(({ url }) => {
-    if (isChatGptUrl(url)) {
-      tabController.createTab(url);
-    } else {
-      shell.openExternal(url);
-    }
-
-    return { action: "deny" };
-  });
+  view.webContents.setWindowOpenHandler(
+    createPopupOpenHandler({
+      createTab: (url) => tabController.createTab(url),
+      openExternal: (url) => shell.openExternal(url),
+    }),
+  );
 
   return view;
 }
