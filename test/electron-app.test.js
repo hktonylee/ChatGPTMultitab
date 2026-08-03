@@ -9,6 +9,39 @@ function readRepoFile(...parts) {
   return fs.readFileSync(path.join(repoRoot, ...parts), "utf8");
 }
 
+function createTabControllerHarness(options = {}) {
+  const { createElectronTabController } = require("../src/electron-tabs");
+  const beforeInputHandlers = [];
+  const stateChanges = [];
+  const controller = createElectronTabController({
+    contentView: {
+      addChildView() {},
+      removeChildView() {},
+    },
+    createView() {
+      return {
+        setBounds() {},
+        webContents: {
+          loadURL() {},
+          on(eventName, handler) {
+            if (eventName === "before-input-event") {
+              beforeInputHandlers.push(handler);
+            }
+          },
+          close() {},
+          focus() {},
+        },
+      };
+    },
+    onStateChange(state) {
+      stateChanges.push(state);
+      options.onStateChange?.(state);
+    },
+  });
+
+  return { beforeInputHandlers, controller, stateChanges };
+}
+
 test("package starts the Electron app from the main process entrypoint", () => {
   const packageJson = JSON.parse(readRepoFile("package.json"));
 
@@ -519,6 +552,18 @@ test("renderer shell closes the active tab with Command+W on macOS without steal
   assert.match(rendererSource, /window\.chatgptTabs\.closeTab\(currentState\.activeTabId\)/);
   assert.doesNotMatch(rendererSource, /key === "p"/);
   assert.doesNotMatch(rendererSource, /key === "delete"/);
+});
+
+test("renderer shell routes platform tab-move shortcuts through the main process", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+  const preloadSource = readRepoFile("electron", "preload.js");
+  const rendererSource = readRepoFile("electron", "renderer.js");
+
+  assert.match(mainSource, /ipcMain\.handle\("tabs:move"/);
+  assert.match(mainSource, /getController\(\)\.moveTab\(id, direction\)/);
+  assert.match(preloadSource, /moveTab: \(id, direction\) => ipcRenderer\.invoke\("tabs:move", id, direction\)/);
+  assert.match(rendererSource, /function getMoveTabShortcutDirection\(event\)/);
+  assert.match(rendererSource, /window\.chatgptTabs\.moveTab\(currentState\.activeTabId, direction\)/);
 });
 
 test("electron tab controller attaches only the active WebContentsView", () => {
@@ -1333,6 +1378,146 @@ test("electron tab controller closes all current tabs and keeps a fresh default 
   assert.equal(state.tabs.length, 1);
   assert.equal(state.tabs[0].url, DEFAULT_CHAT_URL);
   assert.equal(state.activeTabId, state.tabs[0].id);
+});
+
+test("electron tab controller moves a tab one position", () => {
+  const { controller } = createTabControllerHarness();
+  const secondTab = controller.createTab("https://chatgpt.com/c/second");
+  const thirdTab = controller.createTab("https://chatgpt.com/c/third");
+
+  assert.equal(controller.moveTab(thirdTab.id, -1)?.id, thirdTab.id);
+  assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [1, 3, 2]);
+  assert.equal(controller.getState().activeTabId, thirdTab.id);
+
+  assert.equal(controller.moveTab(thirdTab.id, 1)?.id, thirdTab.id);
+  assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [1, 2, 3]);
+  assert.equal(controller.getState().activeTabId, thirdTab.id);
+  assert.equal(secondTab.id, 2);
+});
+
+test("electron tab controller stops tab movement at either edge", () => {
+  const { controller, stateChanges } = createTabControllerHarness();
+  const firstTab = controller.getActiveTab();
+  const secondTab = controller.createTab("https://chatgpt.com/c/second");
+  stateChanges.length = 0;
+
+  assert.equal(controller.moveTab(firstTab.id, -1), null);
+  assert.equal(controller.moveTab(secondTab.id, 1), null);
+  assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [1, 2]);
+  assert.equal(stateChanges.length, 0);
+});
+
+test("electron tab controller moves tabs with Windows Ctrl+Alt+Arrow shortcuts", () => {
+  const { beforeInputHandlers, controller } = createTabControllerHarness();
+  controller.createTab("https://chatgpt.com/c/second");
+  controller.createTab("https://chatgpt.com/c/third");
+
+  let prevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        prevented = true;
+      },
+    },
+    {
+      type: "keyDown",
+      alt: true,
+      control: true,
+      meta: false,
+      shift: false,
+      key: "ArrowLeft",
+      code: "ArrowLeft",
+      platform: "win32",
+    },
+  );
+
+  assert.equal(prevented, true);
+  assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [1, 3, 2]);
+  assert.equal(controller.getState().activeTabId, 3);
+});
+
+test("electron tab controller moves tabs with macOS Command+Alt+Arrow shortcuts", () => {
+  const { beforeInputHandlers, controller } = createTabControllerHarness();
+  controller.createTab("https://chatgpt.com/c/second");
+  controller.createTab("https://chatgpt.com/c/third");
+
+  let prevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        prevented = true;
+      },
+    },
+    {
+      type: "keyDown",
+      alt: true,
+      control: false,
+      meta: true,
+      shift: false,
+      key: "ArrowLeft",
+      code: "ArrowLeft",
+      platform: "darwin",
+    },
+  );
+
+  assert.equal(prevented, true);
+  assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [1, 3, 2]);
+  assert.equal(controller.getState().activeTabId, 3);
+});
+
+test("electron tab controller ignores unsupported tab-move shortcuts", () => {
+  const { getMoveTabShortcutDirection } = require("../src/electron-tabs");
+  const { beforeInputHandlers, controller } = createTabControllerHarness();
+  controller.createTab("https://chatgpt.com/c/second");
+
+  const linuxShortcut = {
+    type: "keyDown",
+    alt: true,
+    control: true,
+    meta: false,
+    shift: false,
+    key: "ArrowLeft",
+    code: "ArrowLeft",
+    platform: "linux",
+  };
+  const unsupportedInputs = [
+    linuxShortcut,
+    {
+      type: "keyDown",
+      alt: true,
+      control: false,
+      meta: true,
+      shift: true,
+      key: "ArrowLeft",
+      code: "ArrowLeft",
+      platform: "darwin",
+    },
+    {
+      type: "keyUp",
+      alt: true,
+      control: true,
+      meta: false,
+      shift: false,
+      key: "ArrowLeft",
+      code: "ArrowLeft",
+      platform: "win32",
+    },
+  ];
+
+  assert.equal(getMoveTabShortcutDirection(linuxShortcut), 0);
+
+  unsupportedInputs.forEach((input) => {
+    beforeInputHandlers.at(-1)(
+      {
+        preventDefault() {
+          throw new Error("unsupported shortcut must pass through");
+        },
+      },
+      input,
+    );
+  });
+
+  assert.deepEqual(controller.getState().tabs.map((tab) => tab.id), [1, 2]);
 });
 
 test("electron tab controller handles webContents shortcuts before window defaults", () => {
