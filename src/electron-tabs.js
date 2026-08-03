@@ -68,6 +68,33 @@ function isMainChatUrl(url) {
   }
 }
 
+function getMoveTabShortcutDirection(input) {
+  if (!input?.alt || input?.shift) {
+    return 0;
+  }
+
+  const platform = input?.platform || process.platform;
+  const isWindowsShortcut = platform === "win32" && input?.control && !input?.meta;
+  const isMacShortcut = platform === "darwin" && input?.meta && !input?.control;
+
+  if (!isWindowsShortcut && !isMacShortcut) {
+    return 0;
+  }
+
+  const key = String(input?.key || "").toLowerCase();
+  const code = String(input?.code || "").toLowerCase();
+
+  if (key === "arrowleft" || code === "arrowleft") {
+    return -1;
+  }
+
+  if (key === "arrowright" || code === "arrowright") {
+    return 1;
+  }
+
+  return 0;
+}
+
 function createElectronTabController({
   contentView,
   createView,
@@ -205,6 +232,14 @@ function createElectronTabController({
 
   function handleTabShortcut(tab, event, input) {
     if (input?.type && input.type !== "keyDown") {
+      return;
+    }
+
+    const moveDirection = getMoveTabShortcutDirection(input);
+
+    if (moveDirection) {
+      event.preventDefault();
+      controller.moveTab(tab.id, moveDirection);
       return;
     }
 
@@ -419,6 +454,21 @@ function createElectronTabController({
       return tab;
     },
 
+    moveTab(id, direction) {
+      const index = tabs.findIndex((tab) => tab.id === Number(id));
+      const offset = Number(direction) < 0 ? -1 : Number(direction) > 0 ? 1 : 0;
+      const nextIndex = index + offset;
+
+      if (index < 0 || offset === 0 || nextIndex < 0 || nextIndex >= tabs.length) {
+        return null;
+      }
+
+      const [tab] = tabs.splice(index, 1);
+      tabs.splice(nextIndex, 0, tab);
+      emitStateChange();
+      return tab;
+    },
+
     closeTab(id, options = {}) {
       const index = tabs.findIndex((tab) => tab.id === Number(id));
 
@@ -616,4 +666,5 @@ module.exports = {
   DEFAULT_CONTENT_BOUNDS,
   INACTIVE_UNLOAD_DELAY_MS,
   createElectronTabController,
+  getMoveTabShortcutDirection,
 };

@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("chatgptTabs", {
   getState: () => ipcRenderer.invoke("tabs:getState"),
   createTab: (url) => ipcRenderer.invoke("tabs:create", url),
   activateTab: (id) => ipcRenderer.invoke("tabs:activate", id),
+  moveTab: (id, direction) => ipcRenderer.invoke("tabs:move", id, direction),
   closeTab: (id) => ipcRenderer.invoke("tabs:close", id),
   restoreClosedTab: () => ipcRenderer.invoke("tabs:restoreClosed"),
   showNewTabMenu: () => ipcRenderer.invoke("tabs:showNewTabMenu"),

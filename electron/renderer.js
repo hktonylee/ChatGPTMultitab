@@ -94,6 +94,31 @@ function getAdjacentTabShortcutDirection(event) {
   return 0;
 }
 
+function getMoveTabShortcutDirection(event) {
+  if (!event.altKey || event.shiftKey) {
+    return 0;
+  }
+
+  const isWindowsShortcut =
+    window.chatgptTabs.platform === "win32" && event.ctrlKey && !event.metaKey;
+  const isMacShortcut =
+    window.chatgptTabs.platform === "darwin" && event.metaKey && !event.ctrlKey;
+
+  if (!isWindowsShortcut && !isMacShortcut) {
+    return 0;
+  }
+
+  if (event.key === "ArrowLeft" || event.code === "ArrowLeft") {
+    return -1;
+  }
+
+  if (event.key === "ArrowRight" || event.code === "ArrowRight") {
+    return 1;
+  }
+
+  return 0;
+}
+
 function activateAdjacentTab(direction) {
   const tabs = currentState.tabs;
   const activeIndex = tabs.findIndex((tab) => tab.id === currentState.activeTabId);
@@ -192,6 +217,14 @@ tabList.addEventListener("scroll", updateTabOverflowIndicators);
 window.addEventListener("resize", updateTabOverflowIndicators);
 
 document.addEventListener("keydown", (event) => {
+  const direction = getMoveTabShortcutDirection(event);
+
+  if (direction) {
+    event.preventDefault();
+    window.chatgptTabs.moveTab(currentState.activeTabId, direction);
+    return;
+  }
+
   if (event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
     const key = String(event.key || "").toLowerCase();
 
@@ -219,11 +252,11 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  const direction = getAdjacentTabShortcutDirection(event);
+  const adjacentDirection = getAdjacentTabShortcutDirection(event);
 
-  if (direction) {
+  if (adjacentDirection) {
     event.preventDefault();
-    activateAdjacentTab(direction);
+    activateAdjacentTab(adjacentDirection);
   }
 });
 

@@ -506,6 +506,7 @@ function getController() {
 ipcMain.handle("tabs:getState", () => getController().getState());
 ipcMain.handle("tabs:create", (_event, url) => getController().createTab(url).id);
 ipcMain.handle("tabs:activate", (_event, id) => getController().activateTab(id)?.id || null);
+ipcMain.handle("tabs:move", (_event, id, direction) => getController().moveTab(id, direction)?.id || null);
 ipcMain.handle("tabs:close", (_event, id) => {
   const closedTabId = getController().closeTab(id)?.id || null;
   keepTabSearchOnTop();
