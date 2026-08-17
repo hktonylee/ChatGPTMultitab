@@ -72,6 +72,9 @@ test("electron app injects custom CSS into ChatGPT pages after every DOM load", 
   const warnings = [];
   let domReadyHandler = null;
   const webContents = {
+    getURL() {
+      return "https://chatgpt.com/c/example";
+    },
     insertCSS(css) {
       insertedCss.push(css);
       return Promise.resolve("inserted-css-key");
@@ -102,6 +105,57 @@ test("electron app injects custom CSS into ChatGPT pages after every DOM load", 
 
   assert.match(mainSource, /installChatPageCss/);
   assert.match(createChatViewSource, /installChatPageCss\(view\.webContents/);
+  assert.equal(mainSource.match(/installChatPageCss\(view\.webContents\)/g)?.length, 1);
+});
+
+test("ChatGPT page CSS injection ignores non-ChatGPT documents", async () => {
+  const { installChatPageCss } = require("../src/chat-page-css");
+  let domReadyHandler = null;
+  let insertionCount = 0;
+  const webContents = {
+    getURL() {
+      return "https://openai.com/";
+    },
+    insertCSS() {
+      insertionCount += 1;
+      return Promise.resolve("inserted-css-key");
+    },
+    on(_eventName, handler) {
+      domReadyHandler = handler;
+    },
+  };
+
+  installChatPageCss(webContents);
+  await domReadyHandler();
+
+  assert.equal(insertionCount, 0);
+});
+
+test("ChatGPT page CSS injection contains synchronous insertion failures", async () => {
+  const { installChatPageCss } = require("../src/chat-page-css");
+  const expectedError = new Error("destroyed");
+  const warnings = [];
+  let domReadyHandler = null;
+  const webContents = {
+    getURL() {
+      return "https://chatgpt.com/";
+    },
+    insertCSS() {
+      throw expectedError;
+    },
+    on(_eventName, handler) {
+      domReadyHandler = handler;
+    },
+  };
+
+  installChatPageCss(webContents, (error) => warnings.push(error));
+
+  let insertionResult;
+  assert.doesNotThrow(() => {
+    insertionResult = domReadyHandler();
+  });
+  await insertionResult;
+  assert.deepEqual(warnings, [expectedError]);
 });
 
 test("electron main process routes popup requests by secure ChatGPT ownership", () => {
