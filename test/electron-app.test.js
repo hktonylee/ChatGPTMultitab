@@ -158,6 +158,29 @@ test("ChatGPT page CSS injection contains synchronous insertion failures", async
   assert.deepEqual(warnings, [expectedError]);
 });
 
+test("ChatGPT page CSS injection contains asynchronous insertion failures", async () => {
+  const { installChatPageCss } = require("../src/chat-page-css");
+  const expectedError = new Error("insertion rejected");
+  const warnings = [];
+  let domReadyHandler = null;
+  const webContents = {
+    getURL() {
+      return "https://chatgpt.com/";
+    },
+    insertCSS() {
+      return Promise.reject(expectedError);
+    },
+    on(_eventName, handler) {
+      domReadyHandler = handler;
+    },
+  };
+
+  installChatPageCss(webContents, (error) => warnings.push(error));
+
+  await assert.doesNotReject(domReadyHandler());
+  assert.deepEqual(warnings, [expectedError]);
+});
+
 test("electron main process routes popup requests by secure ChatGPT ownership", () => {
   const popupRoutingPath = path.join(repoRoot, "src", "popup-routing.js");
 
