@@ -62,6 +62,48 @@ test("electron main process wraps ChatGPT pages in WebContentsView instances", (
   assert.doesNotMatch(mainSource, /<iframe/i);
 });
 
+test("electron app injects custom CSS into ChatGPT pages after every DOM load", async () => {
+  const chatPageCssPath = path.join(repoRoot, "src", "chat-page-css.js");
+
+  assert.equal(fs.existsSync(chatPageCssPath), true, "ChatGPT page CSS injector must exist");
+
+  const { CHAT_PAGE_CSS, installChatPageCss } = require(chatPageCssPath);
+  const insertedCss = [];
+  const warnings = [];
+  let domReadyHandler = null;
+  const webContents = {
+    insertCSS(css) {
+      insertedCss.push(css);
+      return Promise.resolve("inserted-css-key");
+    },
+    on(eventName, handler) {
+      if (eventName === "dom-ready") {
+        domReadyHandler = handler;
+      }
+    },
+  };
+
+  installChatPageCss(webContents, (error) => warnings.push(error));
+
+  assert.equal(CHAT_PAGE_CSS, 'div[popover="manual"] { left:anchor(right); }');
+  assert.equal(typeof domReadyHandler, "function");
+
+  await domReadyHandler();
+  await domReadyHandler();
+
+  assert.deepEqual(insertedCss, [CHAT_PAGE_CSS, CHAT_PAGE_CSS]);
+  assert.deepEqual(warnings, []);
+
+  const mainSource = readRepoFile("electron", "main.js");
+  const createChatViewSource = mainSource.slice(
+    mainSource.indexOf("function createChatView()"),
+    mainSource.indexOf("function createTabSearchView()"),
+  );
+
+  assert.match(mainSource, /installChatPageCss/);
+  assert.match(createChatViewSource, /installChatPageCss\(view\.webContents/);
+});
+
 test("electron main process routes popup requests by secure ChatGPT ownership", () => {
   const popupRoutingPath = path.join(repoRoot, "src", "popup-routing.js");
 
