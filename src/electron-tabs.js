@@ -161,18 +161,17 @@ function createElectronTabController({
     const view = ensureTabLoaded(tab);
     tab.lastActiveAt = now();
 
-    if (attachedView === view) {
-      return;
+    if (attachedView !== view) {
+      if (attachedView) {
+        contentView.removeChildView(attachedView);
+      }
+
+      view.setBounds(bounds);
+      contentView.addChildView(view);
+      attachedView = view;
     }
 
-    if (attachedView) {
-      contentView.removeChildView(attachedView);
-    }
-
-    view.setBounds(bounds);
-    contentView.addChildView(view);
     view.webContents.focus?.();
-    attachedView = view;
   }
 
   function activateAdjacentTab(direction) {

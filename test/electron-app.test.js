@@ -1016,6 +1016,40 @@ test("electron tab controller focuses the visible WebContentsView when the activ
   assert.equal(focusedViews.at(-1), secondTab.view);
 });
 
+test("electron tab controller refocuses the attached view when its tab is reactivated", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+  const focusedViews = [];
+
+  function createView() {
+    const view = {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on() {},
+        close() {},
+        focus() {
+          focusedViews.push(view);
+        },
+      },
+    };
+
+    return view;
+  }
+
+  const controller = createElectronTabController({ contentView, createView });
+  const activeTab = controller.getActiveTab();
+  focusedViews.length = 0;
+
+  controller.activateTab(activeTab.id);
+
+  assert.deepEqual(focusedViews, [activeTab.view]);
+});
+
 test("electron tab controller can restore focus to the active WebContentsView", () => {
   const { createElectronTabController } = require("../src/electron-tabs");
 
