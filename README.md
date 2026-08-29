@@ -16,7 +16,7 @@ It is lightning fast and provides 100% of the official ChatGPT web UI, because e
 - Opens official ChatGPT web UI in a dedicated desktop window.
 - Global hotkey to open a tab and start a query. Since the page is preloaded, it is faster than using a browser or the official native app. You can typically start typing a prompt in 1-2 seconds.
 - Persists open and recently closed tabs in Electron user data.
-- Supports `Ctrl+T` or `Cmd+T` for a new tab, `Ctrl+W` or `Cmd+W` to close the active tab, `Ctrl+Tab` / `Ctrl+Shift+Tab`, `Cmd+Tab` / `Cmd+Shift+Tab`, or `Cmd+Shift+[` / `Cmd+Shift+]` for tab switching, and `Ctrl+Backquote` to search open tabs.
+- Supports `Ctrl+T` or `Cmd+T` for a new tab, `Ctrl+W` or `Cmd+W` to close the active tab, `Ctrl+Tab` / `Ctrl+Shift+Tab`, `Cmd+Tab` / `Cmd+Shift+Tab`, or `Cmd+Shift+[` / `Cmd+Shift+]` for tab switching, `Ctrl+Backquote` to search open tabs, and `Ctrl+Shift+I` to open DevTools for the active ChatGPT tab.
 - Moves the active tab one position with `Ctrl+Alt+Left/Right` on Windows or `Cmd+Alt+Left/Right` on macOS. Movement stops at either end.
 - Looks like a native app and works like a native app, but it is actually browser instances.
 

@@ -251,6 +251,12 @@ function createElectronTabController({
     const code = String(input?.code || "").toLowerCase();
     const adjacentDirection = getAdjacentTabShortcutDirection(input);
 
+    if (input?.control && input?.shift && !input?.meta && (key === "i" || code === "keyi")) {
+      event.preventDefault();
+      tab.view.webContents.openDevTools?.();
+      return;
+    }
+
     if (input?.control && (key === "`" || code === "backquote")) {
       event.preventDefault();
       onToggleTabSearch();

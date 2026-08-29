@@ -1747,6 +1747,59 @@ test("electron tab controller handles webContents shortcuts before window defaul
   assert.equal(controller.getState().tabs.length, 3);
 });
 
+test("electron tab controller opens active tab DevTools with Ctrl+Shift+I", () => {
+  const { createElectronTabController } = require("../src/electron-tabs");
+
+  const beforeInputHandlers = [];
+  let openDevToolsCount = 0;
+  const contentView = {
+    addChildView() {},
+    removeChildView() {},
+  };
+
+  function createView() {
+    return {
+      setBounds() {},
+      webContents: {
+        loadURL() {},
+        on(eventName, handler) {
+          if (eventName === "before-input-event") {
+            beforeInputHandlers.push(handler);
+          }
+        },
+        close() {},
+        focus() {},
+        openDevTools() {
+          openDevToolsCount += 1;
+        },
+      },
+    };
+  }
+
+  createElectronTabController({ contentView, createView });
+
+  let prevented = false;
+  beforeInputHandlers.at(-1)(
+    {
+      preventDefault() {
+        prevented = true;
+      },
+    },
+    {
+      type: "keyDown",
+      alt: false,
+      control: true,
+      meta: false,
+      shift: true,
+      key: "I",
+      code: "KeyI",
+    },
+  );
+
+  assert.equal(prevented, true);
+  assert.equal(openDevToolsCount, 1);
+});
+
 test("electron tab controller lets macOS content shortcuts pass through while closing tabs with Command+W", () => {
   const { createElectronTabController } = require("../src/electron-tabs");
 
