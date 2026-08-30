@@ -1,6 +1,6 @@
 const { isChatGptUrl } = require("./session-state");
 
-const CHAT_PAGE_CSS = 'div[popover="manual"] { right:0% !important; }';
+const CHAT_PAGE_CSS = 'div[popover="manual"] { left:80% !important; }';
 
 function installChatPageCss(
   webContents,

@@ -88,7 +88,7 @@ test("electron app injects custom CSS into ChatGPT pages after every DOM load", 
 
   installChatPageCss(webContents, (error) => warnings.push(error));
 
-  assert.equal(CHAT_PAGE_CSS, 'div[popover="manual"] { right:0% !important; }');
+  assert.equal(CHAT_PAGE_CSS, 'div[popover="manual"] { left:80% !important; }');
   assert.equal(typeof domReadyHandler, "function");
 
   await domReadyHandler();
