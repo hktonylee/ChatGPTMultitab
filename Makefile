@@ -1,4 +1,4 @@
-WINDOWS_CERT_DIR ?= certs
+WINDOWS_CERT_DIR ?= certs/win
 WINDOWS_CERT_NAME ?= ChatGPT Multitab Local Code Signing
 WINDOWS_CERT_PFX ?= $(WINDOWS_CERT_DIR)/chatgpt-multitab-code-signing.pfx
 WINDOWS_CERT_PASSWORD_FILE ?= $(WINDOWS_CERT_DIR)/chatgpt-multitab-code-signing.password.txt
