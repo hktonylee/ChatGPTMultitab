@@ -53,6 +53,13 @@ Windows:
 npm run dist:win
 ```
 
+The Windows artifacts have stable, version-independent names:
+
+- `dist/ChatGPT Multitab.exe` (portable)
+- `dist/ChatGPT Multitab Setup.exe` (installer)
+
+On Windows, configuration, cookies, caches, and tab state are always stored under `%APPDATA%\ChatGPT Multitab`, independent of the executable filename.
+
 ### Windows Unknown Publisher Warning
 
 Windows shows `Unknown publisher` when the `.exe` or installer is not signed with a trusted code-signing certificate. This cannot be fixed with Electron code or `package.json` metadata alone.

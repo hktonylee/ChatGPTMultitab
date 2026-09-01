@@ -13,6 +13,7 @@ const {
   shell,
   systemPreferences,
 } = require("electron");
+const { configureStableAppDataPaths } = require("../src/app-data-paths");
 const { installChatPageCss } = require("../src/chat-page-css");
 const { createElectronTabController } = require("../src/electron-tabs");
 const { createPopupOpenHandler } = require("../src/popup-routing");
@@ -25,6 +26,8 @@ const NEW_TAB_ARG = "--new-tab";
 const IS_MACOS = process.platform === "darwin";
 const NEW_TAB_SHORTCUTS = Object.freeze([IS_MACOS ? "Command+Shift+C" : "Super+C"]);
 const ALLOWED_PERMISSIONS = Object.freeze(["camera", "clipboard-sanitized-write", "geolocation", "media"]);
+
+configureStableAppDataPaths(app);
 
 let mainWindow = null;
 let tabController = null;

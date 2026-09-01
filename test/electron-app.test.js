@@ -50,6 +50,23 @@ test("package starts the Electron app from the main process entrypoint", () => {
   assert.equal(packageJson.devDependencies.electron.startsWith("^"), true);
 });
 
+test("Windows artifacts use stable version-independent filenames", () => {
+  const packageJson = JSON.parse(readRepoFile("package.json"));
+
+  assert.equal(packageJson.build.nsis.artifactName, "${productName} Setup.${ext}");
+  assert.equal(packageJson.build.portable.artifactName, "${productName}.${ext}");
+});
+
+test("electron configures stable Windows data paths before instance startup", () => {
+  const mainSource = readRepoFile("electron", "main.js");
+  const configureIndex = mainSource.indexOf("configureStableAppDataPaths(app);");
+  const instanceLockIndex = mainSource.indexOf("app.requestSingleInstanceLock()");
+
+  assert.match(mainSource, /require\("\.\.\/src\/app-data-paths"\)/);
+  assert.notEqual(configureIndex, -1);
+  assert.equal(configureIndex < instanceLockIndex, true);
+});
+
 test("electron main process wraps ChatGPT pages in WebContentsView instances", () => {
   const mainSource = readRepoFile("electron", "main.js");
   const tabControllerSource = readRepoFile("src", "electron-tabs.js");
@@ -340,7 +357,7 @@ test("electron package excludes Chrome extension and Worker build code", () => {
   assert.equal(fs.existsSync(path.join(repoRoot, "worker")), false);
   assert.equal(
     packageJson.scripts.check,
-    "node --check src/session-state.js && node --check src/electron-tabs.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js && node --check electron/tab-search.js",
+    "node --check src/app-data-paths.js && node --check src/session-state.js && node --check src/electron-tabs.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js && node --check electron/tab-search.js",
   );
 });
 
