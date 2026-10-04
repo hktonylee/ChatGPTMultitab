@@ -112,6 +112,14 @@ Run syntax checks:
 npm run check
 ```
 
+Run Electron navigation regression checks (requires a graphical session, or `xvfb-run -a` on Linux):
+
+```sh
+npm run test:electron
+```
+
+These checks use a local page fixture and a temporary profile to verify sidebar and account menu positioning and clicks at desktop and narrow window sizes. They make no network requests.
+
 ## Project layout
 
 - `electron/main.js`: Electron main process, window setup, `WebContentsView` creation, IPC handlers

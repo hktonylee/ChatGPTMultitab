@@ -14,7 +14,6 @@ const {
   systemPreferences,
 } = require("electron");
 const { configureStableAppDataPaths } = require("../src/app-data-paths");
-const { installChatPageCss } = require("../src/chat-page-css");
 const { createElectronTabController } = require("../src/electron-tabs");
 const { createPopupOpenHandler } = require("../src/popup-routing");
 const { isChatGptUrl, normalizeTabUrl } = require("../src/session-state");
@@ -405,7 +404,6 @@ function createChatView() {
     },
   });
 
-  installChatPageCss(view.webContents);
   view.webContents.setWindowOpenHandler(
     createPopupOpenHandler({
       createTab: (url) => tabController.createTab(url),

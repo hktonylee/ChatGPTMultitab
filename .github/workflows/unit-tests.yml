@@ -31,3 +31,11 @@ jobs:
 
       - name: Run unit tests
         run: npm test
+
+      - name: Run Electron navigation checks (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test:electron -- --no-sandbox
+
+      - name: Run Electron navigation checks (macOS)
+        if: runner.os == 'macOS'
+        run: npm run test:electron
