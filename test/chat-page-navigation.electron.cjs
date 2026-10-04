@@ -10,6 +10,7 @@ const { app, BrowserWindow, session } = electron;
 const repoRoot = path.join(__dirname, "..");
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), "multitab-navigation-test-"));
 app.setPath("userData", profile);
+app.setPath("sessionData", profile);
 app.on("window-all-closed", () => {});
 
 // Evaluate the production view factory without starting the app, registering
@@ -101,6 +102,7 @@ async function checkNavigation(createChatView, width, triggerId, itemId) {
     assert.equal(await view.webContents.executeJavaScript('document.getElementById("selection").textContent'), itemId);
     console.log(`PASS ${triggerId} menu position and click at ${width}px`);
   } finally {
+    view.webContents.close();
     window.destroy();
   }
 }
@@ -112,6 +114,7 @@ const deadline = setTimeout(() => {
 }, 30000);
 
 app.whenReady().then(async () => {
+  assert.equal(session.defaultSession.storagePath, profile, "browser session uses the temporary profile");
   // Intercept HTTPS in this empty profile. The test never contacts ChatGPT.
   await session.defaultSession.protocol.handle("https", () => new Response(fixture, {
     headers: { "content-type": "text/html; charset=utf-8" },
