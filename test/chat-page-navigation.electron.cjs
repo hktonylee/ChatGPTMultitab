@@ -5,6 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { createRequire } = require("node:module");
 const electron = require("electron");
+const { VisibleFixtureView } = require("./visible-fixture-view.cjs");
 
 const { app, BrowserWindow, session } = electron;
 const repoRoot = path.join(__dirname, "..");
@@ -28,6 +29,7 @@ function loadCreateChatView() {
       }
       return {
         ...electron,
+        WebContentsView: VisibleFixtureView,
         app: {
           getPath: () => profile,
           setPath() {},
@@ -82,10 +84,13 @@ async function checkNavigation(createChatView, width, triggerId, itemId) {
   const window = new BrowserWindow({ show: false, width, height: 600 });
   const view = createChatView();
   try {
+    window.webContents.setBackgroundThrottling(false);
+    view.webContents.setBackgroundThrottling(false);
     window.contentView.addChildView(view);
     view.setBounds({ x: 0, y: 42, width, height: 558 });
     await view.webContents.loadURL("https://chatgpt.com/");
-    window.showInactive();
+    window.show();
+    window.focus();
     await view.webContents.executeJavaScript("new Promise(requestAnimationFrame)");
     view.webContents.debugger.attach("1.3");
     const trigger = await bounds(view.webContents, triggerId);

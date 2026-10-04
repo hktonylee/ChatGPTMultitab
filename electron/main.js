@@ -404,6 +404,18 @@ function createChatView() {
     },
   });
 
+  // Remote app-region styles turn sidebar clicks into window drags in Electron.
+  // Reset only native drag behavior; the local tab strip owns window dragging.
+  view.webContents.on("dom-ready", () => {
+    view.webContents
+      .insertCSS("*, *::before, *::after { -webkit-app-region: initial !important; }", { cssOrigin: "user" })
+      .catch((error) => {
+        if (!view.webContents.isDestroyed()) {
+          console.warn("Could not disable ChatGPT window drag regions:", error);
+        }
+      });
+  });
+
   view.webContents.setWindowOpenHandler(
     createPopupOpenHandler({
       createTab: (url) => tabController.createTab(url),

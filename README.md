@@ -120,6 +120,8 @@ npm run test:electron
 
 These checks use a local page fixture and a temporary profile to verify sidebar and account menu positioning and clicks at desktop and narrow window sizes. They make no network requests.
 
+On macOS, Xcode Command Line Tools and the Node installation's headers are required. Additional checks use native window hit-testing and dispatch Cocoa mouse events to the selected view. They verify Home/Scheduled clicks after reloads, tab switches, and search dismissal, while preserving the local tab strip's drag region. Fixture renderers start visible to avoid Electron's initial attachment race; these checks do not use OS-wide mouse input or a signed-in ChatGPT page.
+
 ## Project layout
 
 - `electron/main.js`: Electron main process, window setup, `WebContentsView` creation, IPC handlers
