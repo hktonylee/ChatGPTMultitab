@@ -31,6 +31,9 @@ function loadCreateChatView() {
         ...electron,
         WebContentsView: VisibleFixtureView,
         app: {
+          get userAgentFallback() { return app.userAgentFallback; },
+          set userAgentFallback(value) { app.userAgentFallback = value; },
+          getName: () => app.getName(),
           getPath: () => profile,
           setPath() {},
           requestSingleInstanceLock: () => false,

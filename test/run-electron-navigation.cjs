@@ -29,7 +29,8 @@ try {
   const electron = require("electron");
   const flags = process.argv.slice(2);
   if (process.platform === "darwin") flags.push("--use-mock-keychain");
-  if (run(electron, [...flags, path.join(__dirname, "chat-page-navigation.electron.cjs")]) &&
+  if (run(electron, [...flags, path.join(__dirname, "chat-page-user-agent.electron.cjs")]) &&
+      run(electron, [...flags, path.join(__dirname, "chat-page-navigation.electron.cjs")]) &&
       process.platform === "darwin") {
     run(electron, [...flags, path.join(__dirname, "chat-page-input.electron.cjs")]);
   }

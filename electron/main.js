@@ -14,6 +14,7 @@ const {
   systemPreferences,
 } = require("electron");
 const { configureStableAppDataPaths } = require("../src/app-data-paths");
+const { getBrowserUserAgent } = require("../src/browser-user-agent");
 const { createElectronTabController } = require("../src/electron-tabs");
 const { createPopupOpenHandler } = require("../src/popup-routing");
 const { isChatGptUrl, normalizeTabUrl } = require("../src/session-state");
@@ -27,6 +28,10 @@ const NEW_TAB_SHORTCUTS = Object.freeze([IS_MACOS ? "Command+Shift+C" : "Super+C
 const ALLOWED_PERMISSIONS = Object.freeze(["camera", "clipboard-sanitized-write", "geolocation", "media"]);
 
 configureStableAppDataPaths(app);
+
+// ChatGPT web features need browser identity rather than desktop app tokens.
+// Set before any session or view is created; retain bundled Chromium's version.
+app.userAgentFallback = getBrowserUserAgent(app.userAgentFallback, app.getName());
 
 let mainWindow = null;
 let tabController = null;

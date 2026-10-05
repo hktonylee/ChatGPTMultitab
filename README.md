@@ -22,6 +22,8 @@ It is lightning fast and provides 100% of the official ChatGPT web UI, because e
 
 You sign in to ChatGPT inside the Electron app. Electron keeps its own browser session, separate from Chrome or Edge.
 
+ChatGPT receives a browser user agent using the bundled Chromium version and OS. The app and Electron product tokens are removed so web features such as Scheduled stay available.
+
 ## Requirements
 
 - Node.js
@@ -121,6 +123,8 @@ npm run test:electron
 These checks use a local page fixture and a temporary profile to verify sidebar and account menu positioning and clicks at desktop and narrow window sizes. They make no network requests.
 
 On macOS, Xcode Command Line Tools and the Node installation's headers are required. Additional checks use native window hit-testing and dispatch Cocoa mouse events to the selected view. They verify Home/Scheduled clicks after reloads, tab switches, and search dismissal, while preserving the local tab strip's drag region. Fixture renderers start visible to avoid Electron's initial attachment race; these checks do not use OS-wide mouse input or a signed-in ChatGPT page.
+
+Browser identity checks use an empty temporary profile and a loopback server. They verify navigation, Scheduled API fetches, and worker user agents after reloads and view recreation without accessing your sign-in data.
 
 ## Project layout
 

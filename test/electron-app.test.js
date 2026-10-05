@@ -238,7 +238,7 @@ test("electron package excludes Chrome extension and Worker build code", () => {
   assert.equal(fs.existsSync(path.join(repoRoot, "worker")), false);
   assert.equal(
     packageJson.scripts.check,
-    "node --check src/app-data-paths.js && node --check src/session-state.js && node --check src/electron-tabs.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js && node --check electron/tab-search.js",
+    "node --check src/app-data-paths.js && node --check src/browser-user-agent.js && node --check src/session-state.js && node --check src/electron-tabs.js && node --check electron/main.js && node --check electron/preload.js && node --check electron/renderer.js && node --check electron/tab-search.js",
   );
 });
 
